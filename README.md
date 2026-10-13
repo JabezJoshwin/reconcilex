@@ -51,7 +51,7 @@ From `backend/`:
 ./mvnw package
 ```
 
-The automated suite uses H2 for API integration tests, so the default test run does not need Docker. Unit tests cover CSV validation and matching, including duplicates, empty inputs, and deterministic output. API tests cover persistence/retrieval, upload failures, and safe CSV export. GitHub Actions runs the same test command on Java 21; a local pass does not imply the remote workflow has executed.
+The default suite uses H2 for API integration tests and does not need Docker. Unit tests cover CSV validation and matching, including duplicates, empty inputs, and deterministic output. API tests cover persistence/retrieval, transaction rollback, upload failures, malformed quoting, and safe CSV export. GitHub Actions runs on Java 21 with a PostgreSQL service and enables the PostgreSQL test; the remote workflow has not been executed in this session.
 
 An opt-in test exercises the full workflow against a running PostgreSQL instance. From the repository root, set the connection variables for your local test database and run:
 
@@ -65,6 +65,16 @@ RECONCILEX_POSTGRES_TEST=true \
 This test persists a run; use a local demo/test database.
 
 Execution evidence and infrastructure limitations are recorded in [verification.md](docs/verification.md). No benchmark claims are made without a measured run.
+
+The optional synthetic benchmark parses and reconciles 10,000 rows per file, checks 9,000 matches
+and 1,000 amount mismatches, and reports five timings after three warmups:
+
+```sh
+./backend/mvnw -f backend/pom.xml -Dtest=BenchmarkTest -Dreconcilex.benchmark=true test
+```
+
+It excludes database, HTTP and export time. The final local run measured a 21.290 ms median
+on Apple M1 / Java 21.0.1; this is a local diagnostic, not a production performance claim.
 
 ## API walkthrough
 
@@ -99,6 +109,7 @@ pay_002,120000,INR
 ```
 
 - UTF-8, with an optional UTF-8 BOM; exactly the three ordered headers above. Header-only inputs are valid; blank data rows are rejected.
+- Quoted fields use doubled quotes for escapes. Quotes inside bare fields and whitespace after a closing quote are rejected.
 - Each file is at most 5 MiB and 20,000 data rows.
 - IDs are nonblank, at most 128 Java string characters, contain no control characters, and are compared exactly and case-sensitively. Surrounding spaces are preserved and affect matching.
 - Amounts are decimal digits representing a strictly positive signed-64-bit integer (`1` through `9223372036854775807`). Zero, negative, fractional, overflowing, plus-prefixed, and space-padded amounts are rejected.

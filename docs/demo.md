@@ -1,6 +1,7 @@
 # 60–90 second demo
 
-Start the application using the README before recording. Open http://localhost:8080.
+Start the application using the README before recording. Open http://localhost:8080
+or the configured `APP_PORT`; this checkout's running demo is http://localhost:18080.
 
 1. **0–15 seconds:** Explain: “ReconcileX compares internal payment records to processor records using the exact shared payment reference. It handles integer minor units and keeps every duplicate occurrence.”
 2. **15–30 seconds:** Upload `sample-data/clean-internal.csv` and `sample-data/clean-processor.csv`. Submit and show three matches even though processor rows are in a different order.

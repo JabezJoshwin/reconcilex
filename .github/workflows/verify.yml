@@ -5,6 +5,18 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_DB: reconcilex
+          POSTGRES_USER: reconcilex
+          POSTGRES_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}-ci-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U reconcilex -d reconcilex"
+          --health-interval 5s --health-timeout 5s --health-retries 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
@@ -13,6 +25,11 @@ jobs:
           java-version: '21'
           cache: maven
           cache-dependency-path: backend/pom.xml
-      - name: Run unit and API integration tests
+      - name: Run unit, H2 and PostgreSQL integration tests
         working-directory: backend
+        env:
+          RECONCILEX_POSTGRES_TEST: 'true'
+          DB_URL: jdbc:postgresql://localhost:5432/reconcilex
+          DB_USER: reconcilex
+          DB_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}-ci-only
         run: ./mvnw --batch-mode test
