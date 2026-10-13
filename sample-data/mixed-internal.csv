@@ -1,0 +1,12 @@
+transaction_id,amount_minor,currency
+pay_matched,50000,INR
+pay_amount,120000,INR
+pay_currency,2500,INR
+pay_both,15000,INR
+pay_missing,999,USD
+pay_duplicate_internal,1000,USD
+pay_duplicate_internal,1100,USD
+pay_duplicate_processor,3000,USD
+pay_duplicate_both,4000,USD
+pay_duplicate_both,4500,USD
+=SUM(1+1),100,USD

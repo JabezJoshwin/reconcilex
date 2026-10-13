@@ -1,0 +1,11 @@
+transaction_id,amount_minor,currency
+pay_matched,50000,INR
+pay_amount,119900,INR
+pay_currency,2500,USD
+pay_both,14900,USD
+pay_unexpected,750,EUR
+pay_duplicate_internal,1000,USD
+pay_duplicate_processor,3000,USD
+pay_duplicate_processor,3200,USD
+pay_duplicate_both,4000,USD
+pay_duplicate_both,4500,USD

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>ReconcileX · Payment reconciliation</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="topbar"><a class="brand" href="/" aria-label="ReconcileX home"><span class="brand-icon">≋</span> Reconcile<span>X</span></a><span class="environment"><span class="dot"></span> Local workspace</span></header>
+  <main>
+    <section class="intro"><p class="eyebrow">FINANCIAL OPERATIONS</p><h1>Every payment. Accounted for.</h1><p>Compare internal and processor records by payment reference. Surface discrepancies, preserve duplicates, and export a clear audit trail.</p></section>
+    <div class="workspace">
+      <section class="panel upload-panel" aria-labelledby="upload-title">
+        <div class="panel-heading"><div><p class="eyebrow">NEW RECONCILIATION</p><h2 id="upload-title">Compare your records</h2></div><span class="step">01 / UPLOAD</span></div>
+        <form id="upload-form">
+          <div class="upload-grid">
+            <label class="file-box" for="internal-file"><span class="file-icon" aria-hidden="true">↗</span><strong>Internal transactions</strong><span>Your source of truth</span><input id="internal-file" name="internalFile" type="file" accept=".csv,text/csv" required><span id="internal-description" class="file-description">Choose a CSV file · up to 5 MB</span></label>
+            <label class="file-box" for="processor-file"><span class="file-icon" aria-hidden="true">↙</span><strong>Processor transactions</strong><span>Your payment processor's records</span><input id="processor-file" name="processorFile" type="file" accept=".csv,text/csv" required><span id="processor-description" class="file-description">Choose a CSV file · up to 5 MB</span></label>
+          </div>
+          <div class="format-note"><strong>CSV format</strong><code>transaction_id,amount_minor,currency</code><span>UTF-8 · positive integer minor units · ISO 4217 · 20,000 rows per file</span></div>
+          <div class="upload-footer"><p>Exact reference matching. One finding per distinct ID.</p><button class="primary" id="reconcile-button" type="submit">Run reconciliation <span aria-hidden="true">→</span></button></div>
+        </form>
+      </section>
+      <section class="panel retrieve-panel" aria-labelledby="retrieve-title"><h2 id="retrieve-title">Open an existing run</h2><p>Reports are saved locally in PostgreSQL. Enter a run ID to retrieve its findings.</p><form id="retrieve-form"><label for="run-id">Run ID</label><div class="retrieve-input"><input id="run-id" placeholder="UUID of a saved run" autocomplete="off" required><button id="retrieve-button" class="secondary" type="submit">Open</button></div></form><p class="demo-note">Local demo · No user authentication. Do not expose this application publicly without access controls.</p></section>
+    </div>
+    <div id="feedback" class="feedback" role="status" aria-live="polite" hidden></div>
+    <section id="results" hidden aria-labelledby="results-title">
+      <div class="results-heading"><div><p class="eyebrow">RECONCILIATION REPORT</p><h2 id="results-title">Your reconciliation results</h2><p id="run-metadata" class="metadata"></p></div><a id="export-link" class="secondary download" href="#">Download findings CSV <span aria-hidden="true">↓</span></a></div>
+      <div class="summary-grid"><article class="summary-card"><span>Internal rows</span><strong id="internal-count">0</strong><small>Source records</small></article><article class="summary-card"><span>Processor rows</span><strong id="processor-count">0</strong><small>Source records</small></article><article class="summary-card matched"><span>Matched payments</span><strong id="matched-count">0</strong><small>Exact ID, amount & currency</small></article><article class="summary-card discrepancy"><span>Discrepancies</span><strong id="discrepancy-count">0</strong><small id="distinct-count">0 distinct payment IDs</small></article></div>
+      <div id="classification-counts" class="classification-counts" aria-label="Counts by classification"></div>
+      <section class="panel findings-panel" aria-labelledby="findings-title"><div class="findings-heading"><h3 id="findings-title">Payment findings</h3><label class="filter-label" for="classification-filter">Show<select id="classification-filter"><option value="">All classifications</option></select></label></div><div class="table-scroll"><table><thead><tr><th scope="col">Payment reference</th><th scope="col">Classification</th><th scope="col">Internal amount / currency</th><th scope="col">Processor amount / currency</th><th scope="col">Occurrences<br><small>Internal / processor</small></th></tr></thead><tbody id="findings-body"></tbody></table></div><p id="empty-message" class="empty-message" hidden>No findings in this view.</p><div class="pagination"><span id="page-description"></span><div><button id="previous-page" class="secondary" type="button">← Previous</button><button id="next-page" class="secondary" type="button">Next →</button></div></div></section>
+      <p class="report-note">Amounts are displayed in minor currency units exactly as uploaded. An ambiguous duplicate is always a discrepancy; no amount-based or fuzzy matching is performed. The CSV contains all findings, regardless of this view's filter.</p>
+    </section>
+    <footer>ReconcileX <span>Payment references in. Clear findings out.</span></footer>
+  </main>
+</body>
+</html>

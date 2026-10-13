@@ -1,0 +1,4 @@
+backend/target/
+.env
+.DS_Store
+.tools/

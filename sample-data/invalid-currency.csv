@@ -1,0 +1,2 @@
+transaction_id,amount_minor,currency
+pay_invalid,100,ZZZ

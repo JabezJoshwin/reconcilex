@@ -1,0 +1,4 @@
+transaction_id,amount_minor,currency
+pay_003,999,USD
+pay_001,50000,INR
+pay_002,120000,INR
