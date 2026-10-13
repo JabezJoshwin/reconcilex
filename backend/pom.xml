@@ -2,7 +2,11 @@
   <modelVersion>4.0.0</modelVersion>
   <parent><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-parent</artifactId><version>3.5.6</version><relativePath/></parent>
   <groupId>com.reconcilex</groupId><artifactId>reconcilex</artifactId><version>0.1.0</version>
-  <properties><java.version>21</java.version></properties>
+  <properties>
+    <java.version>21</java.version>
+    <!-- Patch the upload cleanup vulnerability CVE-2025-61795 without changing the Boot line. -->
+    <tomcat.version>10.1.60</tomcat.version>
+  </properties>
   <dependencies>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-web</artifactId></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-jdbc</artifactId></dependency>

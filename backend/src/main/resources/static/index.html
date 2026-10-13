@@ -4,37 +4,119 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
-  <title>ReconcileX · Payment reconciliation</title>
+  <meta name="description" content="A payment reconciliation engine built for correctness. Inspect the engineering, then run your own reconciliation with ReconcileX.">
+  <title>ReconcileX · Every payment. Accounted for.</title>
   <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/theme.css">
+  <script src="/vendor/gsap.min.js" defer></script>
+  <script src="/vendor/ScrollTrigger.min.js" defer></script>
   <script src="/app.js" defer></script>
+  <script src="/presentation.js" defer></script>
 </head>
 <body>
-  <header class="topbar"><a class="brand" href="/" aria-label="ReconcileX home"><span class="brand-icon">≋</span> Reconcile<span>X</span></a><span class="environment"><span class="dot"></span> Local workspace</span></header>
-  <main>
-    <section class="intro"><p class="eyebrow">FINANCIAL OPERATIONS</p><h1>Every payment. Accounted for.</h1><p>Compare internal and processor records by payment reference. Surface discrepancies, preserve duplicates, and export a clear audit trail.</p></section>
-    <div class="workspace">
-      <section class="panel upload-panel" aria-labelledby="upload-title">
-        <div class="panel-heading"><div><p class="eyebrow">NEW RECONCILIATION</p><h2 id="upload-title">Compare your records</h2></div><span class="step">01 / UPLOAD</span></div>
-        <form id="upload-form">
-          <div class="upload-grid">
-            <label class="file-box" for="internal-file"><span class="file-icon" aria-hidden="true">↗</span><strong>Internal transactions</strong><span>Your source of truth</span><input id="internal-file" name="internalFile" type="file" accept=".csv,text/csv" required><span id="internal-description" class="file-description">Choose a CSV file · up to 5 MB</span></label>
-            <label class="file-box" for="processor-file"><span class="file-icon" aria-hidden="true">↙</span><strong>Processor transactions</strong><span>Your payment processor's records</span><input id="processor-file" name="processorFile" type="file" accept=".csv,text/csv" required><span id="processor-description" class="file-description">Choose a CSV file · up to 5 MB</span></label>
-          </div>
-          <div class="format-note"><strong>CSV format</strong><code>transaction_id,amount_minor,currency</code><span>UTF-8 · positive integer minor units · ISO 4217 · 20,000 rows per file</span></div>
-          <div class="upload-footer"><p>Exact reference matching. One finding per distinct ID.</p><button class="primary" id="reconcile-button" type="submit">Run reconciliation <span aria-hidden="true">→</span></button></div>
-        </form>
-      </section>
-      <section class="panel retrieve-panel" aria-labelledby="retrieve-title"><h2 id="retrieve-title">Open an existing run</h2><p>Reports are saved locally in PostgreSQL. Enter a run ID to retrieve its findings.</p><form id="retrieve-form"><label for="run-id">Run ID</label><div class="retrieve-input"><input id="run-id" placeholder="UUID of a saved run" autocomplete="off" required><button id="retrieve-button" class="secondary" type="submit">Open</button></div></form><p class="demo-note">Local demo · No user authentication. Do not expose this application publicly without access controls.</p></section>
-    </div>
-    <div id="feedback" class="feedback" role="status" aria-live="polite" hidden></div>
-    <section id="results" hidden aria-labelledby="results-title">
-      <div class="results-heading"><div><p class="eyebrow">RECONCILIATION REPORT</p><h2 id="results-title">Your reconciliation results</h2><p id="run-metadata" class="metadata"></p></div><a id="export-link" class="secondary download" href="#">Download findings CSV <span aria-hidden="true">↓</span></a></div>
-      <div class="summary-grid"><article class="summary-card"><span>Internal rows</span><strong id="internal-count">0</strong><small>Source records</small></article><article class="summary-card"><span>Processor rows</span><strong id="processor-count">0</strong><small>Source records</small></article><article class="summary-card matched"><span>Matched payments</span><strong id="matched-count">0</strong><small>Exact ID, amount & currency</small></article><article class="summary-card discrepancy"><span>Discrepancies</span><strong id="discrepancy-count">0</strong><small id="distinct-count">0 distinct payment IDs</small></article></div>
-      <div id="classification-counts" class="classification-counts" aria-label="Counts by classification"></div>
-      <section class="panel findings-panel" aria-labelledby="findings-title"><div class="findings-heading"><h3 id="findings-title">Payment findings</h3><label class="filter-label" for="classification-filter">Show<select id="classification-filter"><option value="">All classifications</option></select></label></div><div class="table-scroll"><table><thead><tr><th scope="col">Payment reference</th><th scope="col">Classification</th><th scope="col">Internal amount / currency</th><th scope="col">Processor amount / currency</th><th scope="col">Occurrences<br><small>Internal / processor</small></th></tr></thead><tbody id="findings-body"></tbody></table></div><p id="empty-message" class="empty-message" hidden>No findings in this view.</p><div class="pagination"><span id="page-description"></span><div><button id="previous-page" class="secondary" type="button">← Previous</button><button id="next-page" class="secondary" type="button">Next →</button></div></div></section>
-      <p class="report-note">Amounts are displayed in minor currency units exactly as uploaded. An ambiguous duplicate is always a discrepancy; no amount-based or fuzzy matching is performed. The CSV contains all findings, regardless of this view's filter.</p>
+  <a class="skip-link" href="#workspace">Skip to reconciliation</a>
+  <header class="app-header"><div class="header-inner">
+    <a class="brand" href="#main" aria-label="ReconcileX home"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M4 7h12l7 7-7 7H4l7-7Z"/><path d="m4 7 7 7-7 7"/></svg>Reconcile<span>X</span></a>
+    <nav aria-label="Main navigation"><a href="#engineering">The engine</a><a href="#principles">Design decisions</a></nav>
+    <a class="nav-cta" href="#workspace">Try ReconcileX <span aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-up-right"></use></svg></span></a>
+  </div></header>
+  <main id="main" class="overflow-x-hidden w-full max-w-full">
+    <section class="hero" aria-labelledby="hero-title">
+      <img class="hero-photo" src="/assets/record-sheet.svg" alt="Illustrative payment report: pay_001 matched; pay_002 has an amount mismatch. Amounts are in minor units." fetchpriority="high" width="400" height="480">
+      <div class="hero-wash" aria-hidden="true"></div>
+      <div class="hero-content">
+        <p class="hero-intro">Payment reconciliation. By exact reference.</p>
+        <h1 id="hero-title" class="max-w-6xl"><span>Two files.</span><span>One clear record.</span></h1>
+        <p class="hero-description">Compare internal and processor transactions. Find mismatches, missing payments, and duplicate references. Keep the evidence.</p>
+        <div class="hero-actions"><a class="hero-primary" href="#workspace">Open the workspace <span aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-up-right"></use></svg></span></a><a class="hero-secondary" href="#engineering">Explore the engineering <span aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-down"></use></svg></span></a></div>
+      </div>
+      <div class="hero-bottom"><span>Payment-reference reconciliation</span><a href="#engineering">A closer look <span aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-down"></use></svg></span></a><span>Built to be understood.</span></div>
     </section>
-    <footer>ReconcileX <span>Payment references in. Clear findings out.</span></footer>
+    <section class="stack-section" aria-label="Technology stack">
+      <div class="stack-heading"><p>The stack, kept intentional.</p><button id="motion-toggle" class="motion-toggle" type="button" aria-pressed="false">Pause motion</button></div>
+      <div class="marquee-window"><div class="marquee-track"><div class="marquee-group"><span>Java 21</span><span>Spring Boot</span><span>PostgreSQL</span><span>JUnit 5</span><span>Apache Commons CSV</span><span>Maven</span></div><div class="marquee-group" aria-hidden="true"><span>Java 21</span><span>Spring Boot</span><span>PostgreSQL</span><span>JUnit 5</span><span>Apache Commons CSV</span><span>Maven</span></div></div></div>
+    </section>
+    <section id="engineering" class="engineering chapter" aria-labelledby="engineering-title">
+      <div class="section-heading"><h2 id="engineering-title">Exact IDs.<br><span class="inline-photo" aria-hidden="true"><img src="/assets/record-sheet.svg" width="400" height="480" alt="" loading="lazy"></span> Clear outcomes.</h2><p>The interesting part isn’t comparing two files. <br>It’s making the result reliable.</p></div>
+      <div class="feature-grid grid-flow-dense">
+        <article class="feature-card feature-wide"><div class="card-heading"><h3>A shared reference.<br>An exact answer.</h3><span class="card-arrow" aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-up-right"></use></svg></span></div><div class="match-diagram" aria-label="Illustrative matching example"><div><span>Internal</span><code>pay_001</code><strong>50000 INR</strong></div><span class="diagram-connector" aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-right"></use></svg></span><div><span>Processor</span><code>pay_001</code><strong>50000 INR</strong></div><span class="diagram-outcome">Matched</span></div><p>Hash-based matching by exact payment ID. No fuzzy guesses. No currency conversion.</p><small>Illustrative input · amounts in minor units</small></article>
+        <article class="feature-card duplicate-card"><div class="duplicate-art" aria-hidden="true"><span>pay_002</span><span>pay_002</span><i><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#warning-circle"></use></svg></i></div><h3>Ambiguity stays<br>visible.</h3><p>Repeated references are flagged as duplicates. Every source occurrence is preserved.</p></article>
+        <article class="feature-card report-card"><div class="report-art" aria-hidden="true"><div></div><div></div><div></div><span>CSV <svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-up-right"></use></svg></span></div><h3>An answer you<br>can take with you.</h3><p>Save a run. Reopen its findings. Export a spreadsheet-safe report.</p></article>
+      </div>
+    </section>
+    <section id="principles" class="principles chapter" aria-labelledby="principles-title">
+    <!-- taste-skill-ignore: existing section labels retained to preserve the requested structure. --> <div class="principles-layout"><div class="principles-heading"><p class="section-kicker">Correctness is a design decision.</p><h2 id="principles-title">Simple on purpose.<br>Precise by design.</h2><p>Follow a payment from input to evidence.<br>Each boundary has a clear responsibility.</p><a href="#workspace" class="quiet-link">See it in action <span aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-up-right"></use></svg></span></a></div>
+      <div class="principle-stack">
+        <article class="principle-card"><span class="principle-symbol" aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#brackets-square"></use></svg></span><h3>Validate before <br>you reconcile.</h3><p>Strict UTF-8 and CSV structure. Positive 64-bit integer minor units. Currency, reference, file-size and row-count validation.</p><div class="code-strip"><code>amount_minor: long</code><span>No floating-point money.</span></div></article>
+        <article class="principle-card"><span class="principle-symbol" aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#not-equals"></use></svg></span><h3>One reference. <br>One classification.</h3><p>Matched, missing, unexpected, mismatched or duplicated. Nine disjoint outcomes, in a deterministic order.</p><div class="code-strip"><code>HashMap&lt;String, …&gt;</code><span>Expected linear matching. Sorted reports.</span></div></article>
+        <article class="principle-card"><span class="principle-symbol" aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-elbow-down-right"></use></svg></span><h3>Commit the whole <br>story.</h3><p>A transaction stores the run, findings and source rows together. A failed write rolls back instead of exposing a partial success.</p><div class="code-strip"><code>@Transactional</code><span>PostgreSQL · parameterized JDBC · Flyway</span></div></article>
+      </div></div>
+    </section>
+    <!-- taste-skill-ignore: existing section labels retained to preserve the requested structure. --> <section class="decision-section chapter" aria-labelledby="decision-title"><div class="decision-heading"><p class="section-kicker">Notes from the build</p><h2 id="decision-title">The choices behind<br>the interface.</h2><div class="carousel-controls"><button id="decision-prev" type="button" aria-label="Previous design decision"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-left"></use></svg></button><button id="decision-next" type="button" aria-label="Next design decision"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-right"></use></svg></button></div></div><div class="decision-copy" aria-live="polite"><span id="decision-topic">Money representation</span><p id="decision-text">Integer minor units on the server. Decimal strings in the browser. Precision survives the entire round trip.</p><span id="decision-detail">Java long → JSON string → textContent</span></div></section>
+    <section id="workspace" class="workspace chapter" aria-labelledby="workspace-title">
+    <div class="workspace-topline"><span class="workspace-status">Interactive local demo</span><span>Bring two files. Leave with an answer.</span></div>
+    <div class="page-heading">
+      <div><h2 id="workspace-title">Your records.<br>Your reconciliation.</h2><p class="page-description">Compare payment records. Investigate exceptions.</p></div>
+      <button id="new-reconciliation" class="button primary" type="button">New reconciliation</button>
+    </div>
+    <details id="upload-panel" class="inputs-panel" open>
+      <summary><span class="disclosure-title">Source files</span><span id="input-summary" class="disclosure-description">Internal and processor CSV exports</span></summary>
+      <form id="upload-form" novalidate>
+        <div class="upload-grid">
+          <div class="file-field" id="internal-field">
+            <label for="internal-file">Internal transactions</label><p id="internal-help" class="field-help">Records from your internal payment system.</p>
+            <input id="internal-file" name="internalFile" type="file" accept=".csv,text/csv" aria-describedby="internal-help internal-description" required>
+            <span id="internal-description" class="file-description">No file selected · CSV, up to 5 MiB</span>
+          </div>
+          <div class="file-field" id="processor-field">
+            <label for="processor-file">Processor transactions</label><p id="processor-help" class="field-help">The corresponding payment processor export.</p>
+            <input id="processor-file" name="processorFile" type="file" accept=".csv,text/csv" aria-describedby="processor-help processor-description" required>
+            <span id="processor-description" class="file-description">No file selected · CSV, up to 5 MiB</span>
+          </div>
+        </div>
+        <div class="upload-footer">
+          <div class="format-note"><code>transaction_id,amount_minor,currency</code><span>UTF-8 · positive integer minor units · ISO 4217 · max. 20,000 rows per file</span></div>
+          <button class="button primary" id="reconcile-button" type="submit">Run reconciliation</button>
+        </div>
+      </form>
+    </details>
+    <details id="retrieve-panel" class="retrieve-panel">
+      <summary>Open a saved run<span>Retrieve a report by its run ID</span></summary>
+      <form id="retrieve-form" novalidate><label for="run-id">Run ID</label><div class="retrieve-input"><input id="run-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false" required><button id="retrieve-button" class="button secondary" type="submit">Open run</button></div></form>
+    </details>
+    <div id="feedback" class="feedback" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+    <section id="initial-state" class="initial-state" aria-labelledby="initial-title">
+      <h2 id="initial-title">No report selected</h2><p>Choose two source files to create a reconciliation, or open a saved run.</p><p class="empty-rule">One finding per payment reference. Duplicates are always flagged for review.</p>
+    </section>
+    <section id="results" hidden aria-labelledby="results-title">
+      <div class="report-heading"><div><h2 id="results-title">Run report</h2><p id="run-metadata" class="metadata"></p></div><a id="export-link" class="button secondary" href="#" title="Export all findings, regardless of the selected filter">Export CSV</a></div>
+      <dl class="summary-strip" aria-label="Run summary">
+        <div><dt>Internal rows</dt><dd id="internal-count">—</dd><span>Source records</span></div>
+        <div><dt>Processor rows</dt><dd id="processor-count">—</dd><span>Source records</span></div>
+        <div class="metric-success"><dt>Matched</dt><dd id="matched-count">—</dd><span>ID, amount and currency agree</span></div>
+        <div class="metric-warning"><dt>Requires review</dt><dd id="discrepancy-count">—</dd><span id="distinct-count"></span></div>
+      </dl>
+      <details class="breakdown-panel"><summary>Classification breakdown</summary><dl id="classification-counts" class="classification-counts"></dl></details>
+      <section class="findings-panel" aria-labelledby="findings-title">
+        <div class="findings-heading"><div><h3 id="findings-title">Transaction findings</h3><span class="table-help">Amounts in minor units · select Details to compare source records</span></div><div class="filter-controls"><label class="sr-only" for="classification-filter">Filter findings by classification</label><select id="classification-filter"><option value="">All classifications</option></select><button id="clear-filter" class="button text-button" type="button" hidden>Clear filter</button></div></div>
+        <div id="table-region" class="table-scroll" tabindex="0" role="region" aria-label="Transaction findings table, scroll horizontally on smaller screens">
+          <table class="findings-table"><caption class="sr-only">One classification per distinct payment reference. Amounts are displayed exactly in minor currency units.</caption><thead><tr><th scope="col">Payment reference</th><th scope="col">Classification</th><th scope="col" class="numeric">Internal</th><th scope="col" class="numeric">Processor</th><th scope="col" class="numeric">Occurrences <span>Internal / processor</span></th><th scope="col"><span class="sr-only">Transaction detail</span></th></tr></thead><tbody id="findings-body"></tbody></table>
+        </div>
+        <div id="empty-message" class="table-empty" hidden><h4 id="empty-title">No findings</h4><p id="empty-description"></p></div>
+        <div class="pagination"><span id="page-description" aria-live="polite"></span><div><button id="previous-page" class="button secondary" type="button" disabled>Previous</button><button id="next-page" class="button secondary" type="button" disabled>Next</button></div></div>
+      </section>
+      <p class="report-note">Exact payment-reference matching. No currency conversion or fuzzy matching. CSV exports include every finding, regardless of the selected filter.</p>
+    </section>
+    </section>
+    <section class="closing chapter"><p>From disagreement to understanding.</p><h2>Make the records<br>make sense.</h2><a href="#workspace" class="hero-primary">Run a reconciliation <span aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-up-right"></use></svg></span></a><span class="closing-note">A local portfolio demo. No authentication. Keep it private.</span></section>
+    <footer class="site-footer"><a class="brand" href="#main">Reconcile<span>X</span></a><p>Financial correctness.<br>Visible engineering.</p><a href="#principles">Built with intent <span aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-up"></use></svg></span></a></footer>
   </main>
+  <dialog id="transaction-dialog" class="transaction-dialog" aria-labelledby="detail-title" aria-describedby="detail-explanation">
+    <div class="detail-header"><h2 id="detail-title">Transaction detail</h2><button id="close-detail" class="button secondary" type="button">Close</button></div>
+    <p id="detail-reference" class="detail-reference"></p><p id="detail-classification" class="finding-status"></p><p id="detail-explanation" class="detail-explanation"></p>
+    <table class="comparison-table"><caption>Source comparison</caption><thead><tr><th scope="col">Field</th><th scope="col" class="numeric">Internal</th><th scope="col" class="numeric">Processor</th></tr></thead><tbody><tr><th scope="row">Amount <span>(minor units)</span></th><td id="detail-internal-amount" class="numeric"></td><td id="detail-processor-amount" class="numeric"></td></tr><tr><th scope="row">Currency</th><td id="detail-internal-currency" class="numeric"></td><td id="detail-processor-currency" class="numeric"></td></tr><tr><th scope="row">Occurrences</th><td id="detail-internal-occurrences" class="numeric"></td><td id="detail-processor-occurrences" class="numeric"></td></tr></tbody></table>
+    <p class="detail-note">A repeated reference prevents a reliable one-to-one comparison. No amount is selected from duplicate records.</p>
+    <div class="detail-rule"><h3>Matching rule</h3><p>The payment reference must appear exactly once on each side, with the same amount and currency. Duplicate classifications take precedence.</p></div>
+  </dialog>
 </body>
 </html>

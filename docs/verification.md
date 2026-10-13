@@ -1,5 +1,8 @@
 # Verification evidence
 
+This records the initial MVP verification. The subsequent three-agent review, fixes and
+latest executed checks are in [review-20261013.md](review-20261013.md).
+
 Executed locally on 2026-10-13. Java 21.0.1, Maven wrapper 3.9.11, macOS 26.6.2,
 Apple M1, eight reported processors. The application image also compiled and tested on
 Temurin Java 21 in Docker. PostgreSQL uses the `postgres:17-alpine` image.

@@ -20,8 +20,8 @@ class ApiWorkflowTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper mapper;
     @Autowired JdbcTemplate jdbc;
-    @Autowired com.reconcilex.persistence.RunStore store;
-    @Autowired org.springframework.transaction.PlatformTransactionManager transactionManager;
+    @org.springframework.test.context.bean.override.mockito.MockitoSpyBean com.reconcilex.persistence.RunStore store;
+    @Autowired com.reconcilex.service.ReconciliationService service;
     static final String HEADER="transaction_id,amount_minor,currency\n";
     MockMultipartFile file(String name,String csv) { return new MockMultipartFile(name,"input.csv","text/csv",csv.getBytes(StandardCharsets.UTF_8)); }
     JsonNode upload(String internal,String processor) throws Exception {
@@ -73,6 +73,31 @@ class ApiWorkflowTest {
     @Test void formulaPrefixesIncludingLeadingWhitespace() {
         for(String id:new String[]{"=1+1","+SUM(1)","-1","@SUM(1)","  =1"}) assertThat(ReconciliationController.safeCell(id)).startsWith("'");
     }
+    @Test void frameworkClientErrorsPreserveTheirHttpStatusAndHeaders() throws Exception {
+        mvc.perform(put("/api/reconciliations")).andExpect(status().isMethodNotAllowed()).andExpect(header().string("Allow",org.hamcrest.Matchers.containsString("POST")));
+        mvc.perform(post("/api/reconciliations").contentType("application/json").content("{}"))
+            .andExpect(status().isUnsupportedMediaType()).andExpect(jsonPath("code").value("INVALID_REQUEST"));
+        mvc.perform(get("/api/not-a-route")).andExpect(status().isNotFound()).andExpect(jsonPath("code").value("NOT_FOUND"));
+        mvc.perform(get("/api/health").accept("text/csv")).andExpect(status().isNotAcceptable());
+    }
+    @Test void crossOriginUploadsAreRejectedBeforePersistence() throws Exception {
+        int before=jdbc.queryForObject("SELECT COUNT(*) FROM reconciliation_runs",Integer.class);
+        for(String origin:new String[]{"http://localhost:19090","https://evil.invalid","null","invalid-origin","http://localhost/path","http://user@localhost","http://localhost?x=1","http://localhost#x"})
+            mvc.perform(multipart("/api/reconciliations").file(file("internalFile",HEADER)).file(file("processorFile",HEADER)).header("Origin",origin))
+                .andExpect(status().isForbidden()).andExpect(jsonPath("code").value("CROSS_ORIGIN_REJECTED"));
+        for(String fetchSite:new String[]{"cross-site","same-site"})
+            mvc.perform(multipart("/api/reconciliations").file(file("internalFile",HEADER)).file(file("processorFile",HEADER)).header("Sec-Fetch-Site",fetchSite))
+                .andExpect(status().isForbidden());
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM reconciliation_runs",Integer.class)).isEqualTo(before);
+    }
+    @Test void sameOriginBrowserAndNonBrowserUploadsStillWork() throws Exception {
+        mvc.perform(multipart("/api/reconciliations").file(file("internalFile",HEADER)).file(file("processorFile",HEADER))
+            .header("Origin","http://localhost:18080").header("Sec-Fetch-Site","same-origin")
+            .with(request->{request.setServerName("localhost");request.setServerPort(18080);return request;})).andExpect(status().isCreated());
+        mvc.perform(multipart("/api/reconciliations").file(file("internalFile",HEADER)).file(file("processorFile",HEADER)).header("Origin","http://localhost"))
+            .andExpect(status().isCreated());
+        upload(HEADER,HEADER);
+    }
     @Test void malformedQuotingIsRejectedWithoutSilentlyChangingValues() throws Exception {
         for (String row : new String[]{"a\"b,1,INR", "a,1,\"INR\" ", "\"a\" tail,1,INR"})
             mvc.perform(multipart("/api/reconciliations").file(file("internalFile",HEADER+row)).file(file("processorFile",HEADER)))
@@ -80,16 +105,20 @@ class ApiWorkflowTest {
         upload(HEADER+"\"a\"\"b\",1,INR",HEADER+"\"a\"\"b\",1,INR");
     }
     @Test void databaseFailureRollsBackRunAndResults() {
-        var id=UUID.randomUUID();
-        var summary=new RunSummary(1,0,1,java.util.Map.of(com.reconcilex.domain.Classification.MISSING_IN_PROCESSOR,1L));
-        var run=new RunResponse(id,java.time.Instant.now(),"COMPLETED",summary);
-        var finding=new com.reconcilex.domain.Finding("valid",com.reconcilex.domain.Classification.MISSING_IN_PROCESSOR,1L,"INR",null,null,1,0);
-        // Force a source-row constraint failure after the run and finding have been inserted.
-        var invalidSource=new com.reconcilex.domain.TransactionRow("x".repeat(129),1L,"INR");
-        assertThatThrownBy(() -> new org.springframework.transaction.support.TransactionTemplate(transactionManager).executeWithoutResult(status ->
-            store.save(run,java.util.List.of(finding),java.util.List.of(invalidSource),java.util.List.of())))
+        int runsBefore=jdbc.queryForObject("SELECT COUNT(*) FROM reconciliation_runs",Integer.class);
+        int resultsBefore=jdbc.queryForObject("SELECT COUNT(*) FROM reconciliation_results",Integer.class);
+        int sourcesBefore=jdbc.queryForObject("SELECT COUNT(*) FROM reconciliation_source_rows",Integer.class);
+        // Inject a database error after real inserts, through the actual service proxy.
+        // This must fail if create() loses its transaction boundary.
+        org.mockito.Mockito.doAnswer(invocation -> {
+            invocation.callRealMethod();
+            throw new org.springframework.dao.DataIntegrityViolationException("Injected failure after inserts");
+        }).when(store).save(org.mockito.ArgumentMatchers.any(),org.mockito.ArgumentMatchers.anyList(),org.mockito.ArgumentMatchers.anyList(),org.mockito.ArgumentMatchers.anyList());
+        byte[] csv=(HEADER+"rollback,1,INR\n").getBytes(StandardCharsets.UTF_8);
+        assertThatThrownBy(() -> service.create(new java.io.ByteArrayInputStream(csv),new java.io.ByteArrayInputStream(csv)))
             .isInstanceOf(org.springframework.dao.DataAccessException.class);
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM reconciliation_runs WHERE id = ?",Integer.class,id)).isZero();
-        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM reconciliation_results WHERE run_id = ?",Integer.class,id)).isZero();
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM reconciliation_runs",Integer.class)).isEqualTo(runsBefore);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM reconciliation_results",Integer.class)).isEqualTo(resultsBefore);
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM reconciliation_source_rows",Integer.class)).isEqualTo(sourcesBefore);
     }
 }

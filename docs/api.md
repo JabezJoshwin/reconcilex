@@ -1,5 +1,11 @@
 # API contract
 
+Unsafe browser requests require a matching Origin (scheme, host and effective port)
+and compatible Fetch Metadata. Cross-origin writes return 403 with code
+`CROSS_ORIGIN_REJECTED`. CLI requests without browser headers remain supported.
+Routing/protocol errors preserve HTTP 404, 405 (with `Allow`), 406 and 415 rather than
+being converted to 500. A 406 response can have an empty body.
+
 ## Create a run
 
 `POST /api/reconciliations`, multipart fields `internalFile` and `processorFile`.

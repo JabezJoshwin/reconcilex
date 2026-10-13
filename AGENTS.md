@@ -24,6 +24,12 @@ within two days.
 - Do not hardcode credentials or secrets.
 - Never invent benchmark results or test outcomes.
 
+## UI icon rules
+- Use Phosphor icons for new or updated UI icons in this project.
+- Prefer locally served SVG assets compatible with the existing vanilla HTML/CSS/JavaScript stack and content security policy; do not add a frontend framework just for icons.
+- Keep icon weight and sizing consistent. Decorative icons must be hidden from assistive technology; icon-only controls must have accessible names.
+- Preserve existing layout, animations, and functionality when updating icons.
+
 ## Subagent rules
 - Delegate only independent tasks.
 - Assign exclusive file ownership to each agent.

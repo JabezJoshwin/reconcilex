@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="400" height="480" viewBox="0 0 400 480">
+  <path fill="#e8e5df" d="M45 27h314v420H45z" transform="rotate(-5 202 237)"/>
+  <path fill="#fff" stroke="#c71935" stroke-width="2" d="M40 20h310v420H40z"/>
+  <path fill="#c71935" d="M40 20h310v72H40z"/>
+  <g font-family="Arial, sans-serif" fill="#fff"><text x="60" y="51" font-size="20" font-weight="700">RECONCILEX</text><text x="60" y="73" font-size="12">Payment-reference report</text></g>
+  <g font-family="Arial, sans-serif" fill="#202020">
+    <text x="60" y="122" font-size="12">ILLUSTRATIVE INPUT · MINOR UNITS</text>
+    <text x="60" y="156" font-size="23">pay_001</text><text x="60" y="182" font-size="13">Internal</text><text x="205" y="182" font-size="13">50000 INR</text>
+    <text x="60" y="205" font-size="13">Processor</text><text x="205" y="205" font-size="13">50000 INR</text>
+    <text x="60" y="230" font-size="13" font-weight="700">MATCHED</text>
+    <path stroke="#d9d7d3" d="M60 248h270"/>
+    <text x="60" y="281" font-size="23">pay_002</text><text x="60" y="307" font-size="13">Internal</text><text x="205" y="307" font-size="13">120000 INR</text>
+    <text x="60" y="330" font-size="13">Processor</text><text x="205" y="330" font-size="13">119900 INR</text>
+    <text x="60" y="359" font-size="13" font-weight="700" fill="#c71935">AMOUNT_MISMATCH</text>
+    <path stroke="#c71935" stroke-dasharray="3 4" d="M40 383h310"/>
+    <text x="60" y="410" font-size="12">Exact ID. No fuzzy matching.</text>
+  </g>
+</svg>

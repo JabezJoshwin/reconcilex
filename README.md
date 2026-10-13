@@ -65,6 +65,8 @@ RECONCILEX_POSTGRES_TEST=true \
 This test persists a run; use a local demo/test database.
 
 Execution evidence and infrastructure limitations are recorded in [verification.md](docs/verification.md). No benchmark claims are made without a measured run.
+The [senior backend review](docs/review-20261013.md) records confirmed findings, reproductions,
+targeted security/API fixes, and subsequent verification.
 
 The optional synthetic benchmark parses and reconciles 10,000 rows per file, checks 9,000 matches
 and 1,000 amount mismatches, and reports five timings after three warmups:
@@ -73,7 +75,7 @@ and 1,000 amount mismatches, and reports five timings after three warmups:
 ./backend/mvnw -f backend/pom.xml -Dtest=BenchmarkTest -Dreconcilex.benchmark=true test
 ```
 
-It excludes database, HTTP and export time. The final local run measured a 21.290 ms median
+It excludes database, HTTP and export time. The subsequent review run measured a 28.233 ms median
 on Apple M1 / Java 21.0.1; this is a local diagnostic, not a production performance claim.
 
 ## API walkthrough
