@@ -14,9 +14,9 @@ public class RunStore {
     private final JdbcTemplate jdbc;
     private final ObjectMapper mapper;
     public RunStore(JdbcTemplate jdbc, ObjectMapper mapper) { this.jdbc = jdbc; this.mapper = mapper; }
-    public void save(RunResponse run, List<Finding> findings, List<TransactionRow> internal, List<TransactionRow> processor) {
+    public void save(UUID owner, RunResponse run, List<Finding> findings, List<TransactionRow> internal, List<TransactionRow> processor) {
         try {
-            jdbc.update("INSERT INTO reconciliation_runs VALUES (?, ?, ?, ?, ?, ?)", run.id(), Timestamp.from(run.createdAt()), run.status(), run.summary().internalRows(), run.summary().processorRows(), mapper.writeValueAsString(run.summary()));
+            jdbc.update("INSERT INTO reconciliation_runs (id,created_at,status,internal_rows,processor_rows,summary_json,owner_id) VALUES (?, ?, ?, ?, ?, ?, ?)", run.id(), Timestamp.from(run.createdAt()), run.status(), run.summary().internalRows(), run.summary().processorRows(), mapper.writeValueAsString(run.summary()), owner);
         } catch (JsonProcessingException e) { throw new IllegalStateException("Cannot encode summary", e); }
         jdbc.batchUpdate("INSERT INTO reconciliation_results VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", findings, 500,
             new org.springframework.jdbc.core.ParameterizedPreparedStatementSetter<Finding>() {
@@ -38,20 +38,27 @@ public class RunStore {
                 }
             });
     }
-    public Optional<RunResponse> find(UUID id) {
-        return jdbc.query("SELECT * FROM reconciliation_runs WHERE id = ?", (rs,n) -> {
+    public Optional<RunResponse> find(UUID owner, UUID id) {
+        return jdbc.query("SELECT * FROM reconciliation_runs WHERE id = ? AND owner_id = ?", (rs,n) -> {
             try { return new RunResponse(id, rs.getTimestamp("created_at").toInstant(), rs.getString("status"), mapper.readValue(rs.getString("summary_json"), RunSummary.class)); }
             catch (JsonProcessingException e) { throw new IllegalStateException("Cannot decode summary",e); }
-        },id).stream().findFirst();
+        },id,owner).stream().findFirst();
     }
-    public List<Finding> findings(UUID id, int offset, int limit, Classification filter) {
-        String sql = "SELECT * FROM reconciliation_results WHERE run_id = ?" + (filter == null ? "" : " AND classification = ?") + " ORDER BY ordinal LIMIT ? OFFSET ?";
-        Object[] args = filter == null ? new Object[]{id,limit,offset} : new Object[]{id,filter.name(),limit,offset};
+    public java.util.List<RunResponse> history(UUID owner,int offset,int limit) {
+        return jdbc.query("SELECT * FROM reconciliation_runs WHERE owner_id=? ORDER BY created_at DESC,id DESC LIMIT ? OFFSET ?", (rs,n) -> {
+            try { return new RunResponse(rs.getObject("id",UUID.class),rs.getTimestamp("created_at").toInstant(),rs.getString("status"),mapper.readValue(rs.getString("summary_json"),RunSummary.class)); }
+            catch(JsonProcessingException e) { throw new IllegalStateException("Cannot decode summary",e); }
+        },owner,limit,offset);
+    }
+    public long historyCount(UUID owner) { return jdbc.queryForObject("SELECT COUNT(*) FROM reconciliation_runs WHERE owner_id=?",Long.class,owner); }
+    public List<Finding> findings(UUID owner, UUID id, int offset, int limit, Classification filter) {
+        String sql = "SELECT f.* FROM reconciliation_results f JOIN reconciliation_runs r ON r.id=f.run_id WHERE f.run_id = ? AND r.owner_id = ?" + (filter == null ? "" : " AND classification = ?") + " ORDER BY ordinal LIMIT ? OFFSET ?";
+        Object[] args = filter == null ? new Object[]{id,owner,limit,offset} : new Object[]{id,owner,filter.name(),limit,offset};
         return jdbc.query(sql, (rs,n) -> new Finding(rs.getString("transaction_id"), Classification.valueOf(rs.getString("classification")),
             rs.getObject("internal_amount_minor",Long.class), rs.getString("internal_currency"), rs.getObject("processor_amount_minor",Long.class), rs.getString("processor_currency"), rs.getInt("internal_occurrences"), rs.getInt("processor_occurrences")),args);
     }
-    public long count(UUID id, Classification filter) {
-        return filter == null ? jdbc.queryForObject("SELECT COUNT(*) FROM reconciliation_results WHERE run_id = ?",Long.class,id)
-            : jdbc.queryForObject("SELECT COUNT(*) FROM reconciliation_results WHERE run_id = ? AND classification = ?",Long.class,id,filter.name());
+    public long count(UUID owner, UUID id, Classification filter) {
+        return filter == null ? jdbc.queryForObject("SELECT COUNT(*) FROM reconciliation_results f JOIN reconciliation_runs r ON r.id=f.run_id WHERE f.run_id = ? AND r.owner_id = ?",Long.class,id,owner)
+            : jdbc.queryForObject("SELECT COUNT(*) FROM reconciliation_results f JOIN reconciliation_runs r ON r.id=f.run_id WHERE f.run_id = ? AND r.owner_id = ? AND classification = ?",Long.class,id,owner,filter.name());
     }
 }

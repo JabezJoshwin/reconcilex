@@ -10,15 +10,14 @@
   <link rel="stylesheet" href="/theme.css">
   <script src="/vendor/gsap.min.js" defer></script>
   <script src="/vendor/ScrollTrigger.min.js" defer></script>
-  <script src="/app.js" defer></script>
   <script src="/presentation.js" defer></script>
 </head>
 <body>
-  <a class="skip-link" href="#workspace">Skip to reconciliation</a>
+  <a class="skip-link" href="/dashboard">Skip to reconciliation</a>
   <header class="app-header"><div class="header-inner">
     <a class="brand" href="#main" aria-label="ReconcileX home"><svg viewBox="0 0 28 28" aria-hidden="true"><path d="M4 7h12l7 7-7 7H4l7-7Z"/><path d="m4 7 7 7-7 7"/></svg>Reconcile<span>X</span></a>
     <nav aria-label="Main navigation"><a href="#engineering">The engine</a><a href="#principles">Design decisions</a></nav>
-    <a class="nav-cta" href="#workspace">Try ReconcileX <span aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-up-right"></use></svg></span></a>
+    <a class="nav-cta" href="/dashboard">Try ReconcileX <span aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-up-right"></use></svg></span></a>
   </div></header>
   <main id="main" class="overflow-x-hidden w-full max-w-full">
     <section class="hero" aria-labelledby="hero-title">
@@ -28,7 +27,7 @@
         <p class="hero-intro">Payment reconciliation. By exact reference.</p>
         <h1 id="hero-title" class="max-w-6xl"><span>Two files.</span><span>One clear record.</span></h1>
         <p class="hero-description">Compare internal and processor transactions. Find mismatches, missing payments, and duplicate references. Keep the evidence.</p>
-        <div class="hero-actions"><a class="hero-primary" href="#workspace">Open the workspace <span aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-up-right"></use></svg></span></a><a class="hero-secondary" href="#engineering">Explore the engineering <span aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-down"></use></svg></span></a></div>
+        <div class="hero-actions"><a class="hero-primary" href="/dashboard">Open the workspace <span aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-up-right"></use></svg></span></a><a class="hero-secondary" href="#engineering">Explore the engineering <span aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-down"></use></svg></span></a></div>
       </div>
       <div class="hero-bottom"><span>Payment-reference reconciliation</span><a href="#engineering">A closer look <span aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-down"></use></svg></span></a><span>Built to be understood.</span></div>
     </section>
@@ -45,7 +44,7 @@
       </div>
     </section>
     <section id="principles" class="principles chapter" aria-labelledby="principles-title">
-    <!-- taste-skill-ignore: existing section labels retained to preserve the requested structure. --> <div class="principles-layout"><div class="principles-heading"><p class="section-kicker">Correctness is a design decision.</p><h2 id="principles-title">Simple on purpose.<br>Precise by design.</h2><p>Follow a payment from input to evidence.<br>Each boundary has a clear responsibility.</p><a href="#workspace" class="quiet-link">See it in action <span aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-up-right"></use></svg></span></a></div>
+    <!-- taste-skill-ignore: existing section labels retained to preserve the requested structure. --> <div class="principles-layout"><div class="principles-heading"><p class="section-kicker">Correctness is a design decision.</p><h2 id="principles-title">Simple on purpose.<br>Precise by design.</h2><p>Follow a payment from input to evidence.<br>Each boundary has a clear responsibility.</p><a href="/dashboard" class="quiet-link">See it in action <span aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-up-right"></use></svg></span></a></div>
       <div class="principle-stack">
         <article class="principle-card"><span class="principle-symbol" aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#brackets-square"></use></svg></span><h3>Validate before <br>you reconcile.</h3><p>Strict UTF-8 and CSV structure. Positive 64-bit integer minor units. Currency, reference, file-size and row-count validation.</p><div class="code-strip"><code>amount_minor: long</code><span>No floating-point money.</span></div></article>
         <article class="principle-card"><span class="principle-symbol" aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#not-equals"></use></svg></span><h3>One reference. <br>One classification.</h3><p>Matched, missing, unexpected, mismatched or duplicated. Nine disjoint outcomes, in a deterministic order.</p><div class="code-strip"><code>HashMap&lt;String, …&gt;</code><span>Expected linear matching. Sorted reports.</span></div></article>
@@ -53,70 +52,9 @@
       </div></div>
     </section>
     <!-- taste-skill-ignore: existing section labels retained to preserve the requested structure. --> <section class="decision-section chapter" aria-labelledby="decision-title"><div class="decision-heading"><p class="section-kicker">Notes from the build</p><h2 id="decision-title">The choices behind<br>the interface.</h2><div class="carousel-controls"><button id="decision-prev" type="button" aria-label="Previous design decision"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-left"></use></svg></button><button id="decision-next" type="button" aria-label="Next design decision"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-right"></use></svg></button></div></div><div class="decision-copy" aria-live="polite"><span id="decision-topic">Money representation</span><p id="decision-text">Integer minor units on the server. Decimal strings in the browser. Precision survives the entire round trip.</p><span id="decision-detail">Java long → JSON string → textContent</span></div></section>
-    <section id="workspace" class="workspace chapter" aria-labelledby="workspace-title">
-    <div class="workspace-topline"><span class="workspace-status">Interactive local demo</span><span>Bring two files. Leave with an answer.</span></div>
-    <div class="page-heading">
-      <div><h2 id="workspace-title">Your records.<br>Your reconciliation.</h2><p class="page-description">Compare payment records. Investigate exceptions.</p></div>
-      <button id="new-reconciliation" class="button primary" type="button">New reconciliation</button>
-    </div>
-    <details id="upload-panel" class="inputs-panel" open>
-      <summary><span class="disclosure-title">Source files</span><span id="input-summary" class="disclosure-description">Internal and processor CSV exports</span></summary>
-      <form id="upload-form" novalidate>
-        <div class="upload-grid">
-          <div class="file-field" id="internal-field">
-            <label for="internal-file">Internal transactions</label><p id="internal-help" class="field-help">Records from your internal payment system.</p>
-            <input id="internal-file" name="internalFile" type="file" accept=".csv,text/csv" aria-describedby="internal-help internal-description" required>
-            <span id="internal-description" class="file-description">No file selected · CSV, up to 5 MiB</span>
-          </div>
-          <div class="file-field" id="processor-field">
-            <label for="processor-file">Processor transactions</label><p id="processor-help" class="field-help">The corresponding payment processor export.</p>
-            <input id="processor-file" name="processorFile" type="file" accept=".csv,text/csv" aria-describedby="processor-help processor-description" required>
-            <span id="processor-description" class="file-description">No file selected · CSV, up to 5 MiB</span>
-          </div>
-        </div>
-        <div class="upload-footer">
-          <div class="format-note"><code>transaction_id,amount_minor,currency</code><span>UTF-8 · positive integer minor units · ISO 4217 · max. 20,000 rows per file</span></div>
-          <button class="button primary" id="reconcile-button" type="submit">Run reconciliation</button>
-        </div>
-      </form>
-    </details>
-    <details id="retrieve-panel" class="retrieve-panel">
-      <summary>Open a saved run<span>Retrieve a report by its run ID</span></summary>
-      <form id="retrieve-form" novalidate><label for="run-id">Run ID</label><div class="retrieve-input"><input id="run-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false" required><button id="retrieve-button" class="button secondary" type="submit">Open run</button></div></form>
-    </details>
-    <div id="feedback" class="feedback" role="status" aria-live="polite" aria-atomic="true" hidden></div>
-    <section id="initial-state" class="initial-state" aria-labelledby="initial-title">
-      <h2 id="initial-title">No report selected</h2><p>Choose two source files to create a reconciliation, or open a saved run.</p><p class="empty-rule">One finding per payment reference. Duplicates are always flagged for review.</p>
-    </section>
-    <section id="results" hidden aria-labelledby="results-title">
-      <div class="report-heading"><div><h2 id="results-title">Run report</h2><p id="run-metadata" class="metadata"></p></div><a id="export-link" class="button secondary" href="#" title="Export all findings, regardless of the selected filter">Export CSV</a></div>
-      <dl class="summary-strip" aria-label="Run summary">
-        <div><dt>Internal rows</dt><dd id="internal-count">—</dd><span>Source records</span></div>
-        <div><dt>Processor rows</dt><dd id="processor-count">—</dd><span>Source records</span></div>
-        <div class="metric-success"><dt>Matched</dt><dd id="matched-count">—</dd><span>ID, amount and currency agree</span></div>
-        <div class="metric-warning"><dt>Requires review</dt><dd id="discrepancy-count">—</dd><span id="distinct-count"></span></div>
-      </dl>
-      <details class="breakdown-panel"><summary>Classification breakdown</summary><dl id="classification-counts" class="classification-counts"></dl></details>
-      <section class="findings-panel" aria-labelledby="findings-title">
-        <div class="findings-heading"><div><h3 id="findings-title">Transaction findings</h3><span class="table-help">Amounts in minor units · select Details to compare source records</span></div><div class="filter-controls"><label class="sr-only" for="classification-filter">Filter findings by classification</label><select id="classification-filter"><option value="">All classifications</option></select><button id="clear-filter" class="button text-button" type="button" hidden>Clear filter</button></div></div>
-        <div id="table-region" class="table-scroll" tabindex="0" role="region" aria-label="Transaction findings table, scroll horizontally on smaller screens">
-          <table class="findings-table"><caption class="sr-only">One classification per distinct payment reference. Amounts are displayed exactly in minor currency units.</caption><thead><tr><th scope="col">Payment reference</th><th scope="col">Classification</th><th scope="col" class="numeric">Internal</th><th scope="col" class="numeric">Processor</th><th scope="col" class="numeric">Occurrences <span>Internal / processor</span></th><th scope="col"><span class="sr-only">Transaction detail</span></th></tr></thead><tbody id="findings-body"></tbody></table>
-        </div>
-        <div id="empty-message" class="table-empty" hidden><h4 id="empty-title">No findings</h4><p id="empty-description"></p></div>
-        <div class="pagination"><span id="page-description" aria-live="polite"></span><div><button id="previous-page" class="button secondary" type="button" disabled>Previous</button><button id="next-page" class="button secondary" type="button" disabled>Next</button></div></div>
-      </section>
-      <p class="report-note">Exact payment-reference matching. No currency conversion or fuzzy matching. CSV exports include every finding, regardless of the selected filter.</p>
-    </section>
-    </section>
-    <section class="closing chapter"><p>From disagreement to understanding.</p><h2>Make the records<br>make sense.</h2><a href="#workspace" class="hero-primary">Run a reconciliation <span aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-up-right"></use></svg></span></a><span class="closing-note">A local portfolio demo. No authentication. Keep it private.</span></section>
+    <section id="workspace" class="workspace chapter"><h2>Your private workspace.</h2><p>Sign in to reconcile your records and reopen previous runs.</p><a href="/login" class="hero-primary">Sign in to your workspace</a></section>
+    <section class="closing chapter"><p>From disagreement to understanding.</p><h2>Make the records<br>make sense.</h2><a href="/dashboard" class="hero-primary">Run a reconciliation <span aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-up-right"></use></svg></span></a><span class="closing-note">Private reports. Exact payment-reference reconciliation.</span></section>
     <footer class="site-footer"><a class="brand" href="#main">Reconcile<span>X</span></a><p>Financial correctness.<br>Visible engineering.</p><a href="#principles">Built with intent <span aria-hidden="true"><svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-up"></use></svg></span></a></footer>
   </main>
-  <dialog id="transaction-dialog" class="transaction-dialog" aria-labelledby="detail-title" aria-describedby="detail-explanation">
-    <div class="detail-header"><h2 id="detail-title">Transaction detail</h2><button id="close-detail" class="button secondary" type="button">Close</button></div>
-    <p id="detail-reference" class="detail-reference"></p><p id="detail-classification" class="finding-status"></p><p id="detail-explanation" class="detail-explanation"></p>
-    <table class="comparison-table"><caption>Source comparison</caption><thead><tr><th scope="col">Field</th><th scope="col" class="numeric">Internal</th><th scope="col" class="numeric">Processor</th></tr></thead><tbody><tr><th scope="row">Amount <span>(minor units)</span></th><td id="detail-internal-amount" class="numeric"></td><td id="detail-processor-amount" class="numeric"></td></tr><tr><th scope="row">Currency</th><td id="detail-internal-currency" class="numeric"></td><td id="detail-processor-currency" class="numeric"></td></tr><tr><th scope="row">Occurrences</th><td id="detail-internal-occurrences" class="numeric"></td><td id="detail-processor-occurrences" class="numeric"></td></tr></tbody></table>
-    <p class="detail-note">A repeated reference prevents a reliable one-to-one comparison. No amount is selected from duplicate records.</p>
-    <div class="detail-rule"><h3>Matching rule</h3><p>The payment reference must appear exactly once on each side, with the same amount and currency. Duplicate classifications take precedence.</p></div>
-  </dialog>
 </body>
 </html>

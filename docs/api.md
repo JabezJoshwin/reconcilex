@@ -1,10 +1,27 @@
 # API contract
 
+All reconciliation APIs require a session. Anonymous access returns JSON 401.
+Missing/foreign runs return identical 404 errors. Unsafe requests, including CLI
+uploads and POST logout, require the session's CSRF token from
+`GET /api/auth/csrf` in its returned header name. Authentication requires a verified Clerk session token (Bearer header or __session cookie). There is no password API.
+
 Unsafe browser requests require a matching Origin (scheme, host and effective port)
 and compatible Fetch Metadata. Cross-origin writes return 403 with code
-`CROSS_ORIGIN_REJECTED`. CLI requests without browser headers remain supported.
+`CROSS_ORIGIN_REJECTED`. CLI requests require a Clerk Bearer token plus CSRF session cookies/protection.
 Routing/protocol errors preserve HTTP 404, 405 (with `Allow`), 406 and 415 rather than
 being converted to 500. A 406 response can have an empty body.
+
+## Account and history
+
+`GET /api/me` returns `id`, `displayName`, and `email` for the signed-in user.
+`GET /api/auth/config` publicly returns `clerkConfigured`, `publishableKey`, and `frontendApi`. No secret key is exposed.
+New Clerk accounts return a fallback displayName and blank email from /api/me; the UI reads profile data from ClerkJS.
+`GET /api/auth/csrf` returns `token` and `headerName`; it never returns provider tokens.
+`POST /logout` requires CSRF, invalidates the local CSRF session, and returns 204. The UI then calls Clerk.signOut(); a copied JWT stays valid until its short expiry.
+
+`GET /api/reconciliations?page=0&size=20` returns
+`{runs: [RunResponse], page, size, totalRuns}`. Size is 1–100; ordering is
+created timestamp descending, then UUID descending. Only owned runs are included.
 
 ## Create a run
 

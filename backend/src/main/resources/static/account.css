@@ -1,0 +1,63 @@
+.account-header { max-width: 1360px; margin: auto; padding: 28px 40px; display: flex; gap: 24px; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--color-border); }
+.account-header .brand { color: var(--color-accent); font-size: 28px; }
+.account-header nav { display: flex; }
+.account-header a { text-underline-offset: 5px; }
+.account-page main { min-height: calc(100svh - 100px); }
+.auth-layout { display: grid; grid-template-columns: minmax(0,1.2fr) minmax(0,1fr); gap: 100px; max-width: 1280px; margin: auto; padding: 76px 40px 64px; align-content: start; }
+/* Display typography belongs to the introduction, never Clerk's nested headings. */
+.auth-intro > h1, .history-section h1 { font-size: clamp(40px,5.4vw,78px); font-weight: 500; letter-spacing: -.035em; word-spacing: .04em; line-height: 1.04; color: var(--color-accent); margin: 24px 0; }
+.auth-layout > section { min-width: 0; }
+#account-name { overflow-wrap: anywhere; }
+.auth-intro > p { font-size: 17px; line-height: 1.7; max-width: 36ch; margin: 20px 0; color: var(--color-muted); }
+.auth-intro > .auth-eyebrow { font-size: 13px; margin: 0 0 32px; }
+.auth-intro > .auth-description { margin-top: 32px; }
+.auth-panel { background: transparent; padding: 0 0 0 48px; border-left: 1px solid var(--color-border); align-self: start; }
+.auth-panel > .auth-note { font-size: 12px; line-height: 1.6; color: var(--color-muted); max-width: 48ch; margin: 24px 0 0; }
+.account-header .auth-back { display: inline-flex; gap: 8px; align-items: center; font-size: 14px; }
+.auth-back .ph-icon { width: 16px; height: 16px; }
+#auth-feedback { font-size: 14px; line-height: 1.6; color: var(--color-muted); }
+#auth-feedback:empty { display: none; }
+#auth-feedback[role="alert"] { padding: 16px; color: var(--color-error); background: var(--color-error-bg); border-left: 2px solid var(--color-error); }
+
+/* Stable public Clerk selectors; no overrides of generated/internal classes. */
+#clerk-auth { width: 100%; min-width: 0; }
+#clerk-auth .cl-rootBox, #clerk-auth .cl-cardBox { width: 100%; max-width: none; min-width: 0; }
+#clerk-auth .cl-cardBox, #clerk-auth .cl-card { border: 0; border-radius: 0; box-shadow: none; background: transparent; padding: 0; }
+#clerk-auth .cl-header { text-align: left; margin-bottom: 28px; }
+#clerk-auth .cl-headerTitle { margin: 0; font-size: 26px; line-height: 1.2; letter-spacing: -.03em; font-weight: 500; color: var(--color-ink); }
+#clerk-auth .cl-headerSubtitle { margin: 10px 0 0; font-size: 14px; line-height: 1.6; color: var(--color-muted); }
+#clerk-auth .cl-socialButtonsBlockButton { min-height: 46px; padding: 12px 16px; border: 1px solid var(--color-border); border-radius: 2px; background: var(--color-bg); box-shadow: none; color: var(--color-ink); transition: border-color .18s, background .18s; }
+#clerk-auth .cl-socialButtonsBlockButton:hover { border-color: var(--color-border-strong); background: var(--color-subtle); }
+#clerk-auth .cl-socialButtonsBlockButtonText { font-size: 14px; font-weight: 500; }
+#clerk-auth .cl-dividerLine { background: var(--color-border); }
+#clerk-auth .cl-dividerText { font-size: 12px; font-weight: 400; color: var(--color-muted); }
+#clerk-auth .cl-formFieldLabel { font-size: 13px; font-weight: 500; color: var(--color-ink); }
+#clerk-auth .cl-formFieldInput { min-height: 48px; font-size: 16px; line-height: 1.4; padding: 12px 14px; border: 1px solid var(--color-border); border-radius: 2px; box-shadow: none; color: var(--color-ink); background: var(--color-bg); }
+#clerk-auth .cl-formFieldInput:focus { border-color: var(--color-accent); outline: 2px solid var(--color-focus); outline-offset: 2px; }
+#clerk-auth .cl-formButtonPrimary { min-height: 48px; padding: 12px 18px; border: 1px solid var(--color-accent); border-radius: 2px; box-shadow: none; background: var(--color-accent); color: #fff; font-size: 14px; font-weight: 500; text-transform: none; transition: background .18s; }
+#clerk-auth .cl-formButtonPrimary:hover { background: var(--color-accent-hover); border-color: var(--color-accent-hover); }
+#clerk-auth .cl-formButtonPrimary:disabled { cursor: not-allowed; opacity: .55; }
+#clerk-auth .cl-footer { margin-top: 24px; padding: 18px 0 0; border-top: 1px solid var(--color-border); background: transparent; }
+#clerk-auth .cl-footerAction { padding: 0; background: transparent; font-size: 13px; }
+#clerk-auth .cl-footerActionText { color: var(--color-muted); }
+#clerk-auth .cl-footerActionLink, #clerk-auth .cl-formFieldAction { color: var(--color-accent); font-weight: 500; text-underline-offset: 4px; }
+#clerk-auth .cl-footerActionLink:hover, #clerk-auth .cl-formFieldAction:hover { text-decoration: underline; }
+#clerk-auth .cl-formFieldErrorText, #clerk-auth .cl-alertText { font-size: 13px; line-height: 1.5; }
+@media(prefers-reduced-motion: reduce) { #clerk-auth button { transition: none; } }
+.history-section { max-width: 1280px; padding: 70px 40px; margin: auto; }
+.history-table { width: 100%; min-width: 650px; border-collapse: collapse; margin-top: 36px; font-variant-numeric: tabular-nums; }
+.history-table th, .history-table td { padding: 20px 12px; text-align: left; border-bottom: 1px solid var(--color-border); }
+.history-table th { background: var(--color-subtle); font-size: 13px; font-weight: 500; }
+.history-table td { font-size: 15px; }
+.history-table button { min-height: 44px; }
+#history-feedback, #auth-feedback { margin-top: 24px; overflow-wrap: anywhere; }
+.account-page .workspace { margin-bottom: 80px; }
+.account-page .workspace h2 { color: var(--color-ink); }
+@media(max-width: 959px) { .auth-layout { grid-template-columns: minmax(0,1fr); gap: 40px; padding: 48px 24px; max-width: 640px; } .auth-panel { border-left: 0; border-top: 1px solid var(--color-border); padding: 32px 0 0; } .auth-intro > h1 { font-size: clamp(40px,7vw,64px); } }
+@media(max-width: 600px) { .account-header { padding: 24px 20px; flex-wrap: wrap; } .account-header nav { order: 3; width: 100%; gap: 24px; } .auth-layout { padding: 32px 20px 48px; gap: 28px; } .auth-intro > .auth-eyebrow { margin-bottom: 24px; font-size: 12px; } .auth-intro > .auth-description { margin-top: 20px; font-size: 15px; } .auth-intro > h1 { margin: 0; font-size: 44px; } .account-header .auth-back { font-size: 12px; } .history-section { padding: 40px 20px; } }
+@media(max-width: 380px) {
+  .account-header { gap: 16px; }
+  .account-header .brand { font-size: 24px; }
+  .auth-intro > h1 { font-size: 36px; }
+  #clerk-auth .cl-socialButtons { grid-template-columns: minmax(0,1fr); }
+}

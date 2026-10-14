@@ -1,5 +1,14 @@
 # Frontend design
 
+## Authenticated dashboard extension — 2026-10-14
+
+Login/signup and the protected run-history dashboard now reuse the existing
+design language. The public landing retains its animation script and section
+order, with a sign-in entry in place of anonymous uploads. The working report
+UI moved to dashboard.html, and new identity/history rendering uses textContent.
+See authentication.md for current security and verification evidence; earlier
+verification entries below describe the pre-authentication design passes.
+
 ## Current visual reference
 
 The latest reference is [Neutomni](https://neutomni.com): oversized red identity,

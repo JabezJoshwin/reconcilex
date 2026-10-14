@@ -33,3 +33,8 @@ jobs:
           DB_USER: reconcilex
           DB_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}-ci-only
         run: ./mvnw --batch-mode test
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run frontend contract tests
+        run: node --test backend/src/test/frontend/*.test.cjs

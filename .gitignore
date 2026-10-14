@@ -5,3 +5,4 @@ backend/target/
 .agents/
 .taste-skill/
 skills-lock.json
+cookies.txt

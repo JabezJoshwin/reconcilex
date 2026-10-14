@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Your runs · ReconcileX</title>
+<link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/theme.css"><link rel="stylesheet" href="/account.css">
+<script src="/clerk.js" defer></script><script src="/app.js" defer></script><script src="/dashboard.js" defer></script></head>
+<body class="account-page"><a class="skip-link" href="#workspace">Skip to reconciliation</a>
+<header class="account-header"><a class="brand" href="/">Reconcile<span>X</span></a><nav aria-label="Account navigation"><a href="#history" aria-current="page">Your runs</a><a href="#workspace">New reconciliation</a></nav><button id="logout-button" class="button secondary" type="button">Log out</button></header>
+<main><section id="history" class="history-section"><p id="account-name">Loading your account…</p><h1>Your records.<br>Your history.</h1><p>Every saved reconciliation, ready to reopen.</p>
+<div id="history-feedback" role="status" aria-live="polite"></div>
+<div class="table-scroll" tabindex="0" role="region" aria-label="Your run history, scroll horizontally on smaller screens"><table class="history-table"><caption class="sr-only">Your reconciliation runs, newest first</caption><thead><tr><th scope="col">Created (UTC)</th><th scope="col">Source rows</th><th scope="col">Matched</th><th scope="col">Requires review</th><th scope="col">Report</th></tr></thead><tbody id="history-body"></tbody></table></div>
+<div class="pagination"><span id="history-page"></span><div><button id="history-prev" class="button secondary" disabled>Previous</button><button id="history-next" class="button secondary" disabled>Next</button><button id="history-retry" class="button secondary">Refresh</button></div></div></section>
+    <section id="workspace" class="workspace chapter" aria-labelledby="workspace-title">
+    <div class="workspace-topline"><span class="workspace-status">Private workspace</span><span>Bring two files. Leave with an answer.</span></div>
+    <div class="page-heading">
+      <div><h2 id="workspace-title">Your records.<br>Your reconciliation.</h2><p class="page-description">Compare payment records. Investigate exceptions.</p></div>
+      <button id="new-reconciliation" class="button primary" type="button">New reconciliation</button>
+    </div>
+    <details id="upload-panel" class="inputs-panel" open>
+      <summary><span class="disclosure-title">Source files</span><span id="input-summary" class="disclosure-description">Internal and processor CSV exports</span></summary>
+      <form id="upload-form" novalidate>
+        <div class="upload-grid">
+          <div class="file-field" id="internal-field">
+            <label for="internal-file">Internal transactions</label><p id="internal-help" class="field-help">Records from your internal payment system.</p>
+            <input id="internal-file" name="internalFile" type="file" accept=".csv,text/csv" aria-describedby="internal-help internal-description" required>
+            <span id="internal-description" class="file-description">No file selected · CSV, up to 5 MiB</span>
+          </div>
+          <div class="file-field" id="processor-field">
+            <label for="processor-file">Processor transactions</label><p id="processor-help" class="field-help">The corresponding payment processor export.</p>
+            <input id="processor-file" name="processorFile" type="file" accept=".csv,text/csv" aria-describedby="processor-help processor-description" required>
+            <span id="processor-description" class="file-description">No file selected · CSV, up to 5 MiB</span>
+          </div>
+        </div>
+        <div class="upload-footer">
+          <div class="format-note"><code>transaction_id,amount_minor,currency</code><span>UTF-8 · positive integer minor units · ISO 4217 · max. 20,000 rows per file</span></div>
+          <button class="button primary" id="reconcile-button" type="submit">Run reconciliation</button>
+        </div>
+      </form>
+    </details>
+    <details id="retrieve-panel" class="retrieve-panel">
+      <summary>Open a saved run<span>Retrieve a report by its run ID</span></summary>
+      <form id="retrieve-form" novalidate><label for="run-id">Run ID</label><div class="retrieve-input"><input id="run-id" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" spellcheck="false" required><button id="retrieve-button" class="button secondary" type="submit">Open run</button></div></form>
+    </details>
+    <div id="feedback" class="feedback" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+    <section id="initial-state" class="initial-state" aria-labelledby="initial-title">
+      <h2 id="initial-title">No report selected</h2><p>Choose two source files to create a reconciliation, or open a saved run.</p><p class="empty-rule">One finding per payment reference. Duplicates are always flagged for review.</p>
+    </section>
+    <section id="results" hidden aria-labelledby="results-title">
+      <div class="report-heading"><div><h2 id="results-title">Run report</h2><p id="run-metadata" class="metadata"></p></div><a id="export-link" class="button secondary" href="#" title="Export all findings, regardless of the selected filter">Export CSV</a></div>
+      <dl class="summary-strip" aria-label="Run summary">
+        <div><dt>Internal rows</dt><dd id="internal-count">—</dd><span>Source records</span></div>
+        <div><dt>Processor rows</dt><dd id="processor-count">—</dd><span>Source records</span></div>
+        <div class="metric-success"><dt>Matched</dt><dd id="matched-count">—</dd><span>ID, amount and currency agree</span></div>
+        <div class="metric-warning"><dt>Requires review</dt><dd id="discrepancy-count">—</dd><span id="distinct-count"></span></div>
+      </dl>
+      <details class="breakdown-panel"><summary>Classification breakdown</summary><dl id="classification-counts" class="classification-counts"></dl></details>
+      <section class="findings-panel" aria-labelledby="findings-title">
+        <div class="findings-heading"><div><h3 id="findings-title">Transaction findings</h3><span class="table-help">Amounts in minor units · select Details to compare source records</span></div><div class="filter-controls"><label class="sr-only" for="classification-filter">Filter findings by classification</label><select id="classification-filter"><option value="">All classifications</option></select><button id="clear-filter" class="button text-button" type="button" hidden>Clear filter</button></div></div>
+        <div id="table-region" class="table-scroll" tabindex="0" role="region" aria-label="Transaction findings table, scroll horizontally on smaller screens">
+          <table class="findings-table"><caption class="sr-only">One classification per distinct payment reference. Amounts are displayed exactly in minor currency units.</caption><thead><tr><th scope="col">Payment reference</th><th scope="col">Classification</th><th scope="col" class="numeric">Internal</th><th scope="col" class="numeric">Processor</th><th scope="col" class="numeric">Occurrences <span>Internal / processor</span></th><th scope="col"><span class="sr-only">Transaction detail</span></th></tr></thead><tbody id="findings-body"></tbody></table>
+        </div>
+        <div id="empty-message" class="table-empty" hidden><h4 id="empty-title">No findings</h4><p id="empty-description"></p></div>
+        <div class="pagination"><span id="page-description" aria-live="polite"></span><div><button id="previous-page" class="button secondary" type="button" disabled>Previous</button><button id="next-page" class="button secondary" type="button" disabled>Next</button></div></div>
+      </section>
+      <p class="report-note">Exact payment-reference matching. No currency conversion or fuzzy matching. CSV exports include every finding, regardless of the selected filter.</p>
+    </section>
+    </section>
+</main>
+  <dialog id="transaction-dialog" class="transaction-dialog" aria-labelledby="detail-title" aria-describedby="detail-explanation">
+    <div class="detail-header"><h2 id="detail-title">Transaction detail</h2><button id="close-detail" class="button secondary" type="button">Close</button></div>
+    <p id="detail-reference" class="detail-reference"></p><p id="detail-classification" class="finding-status"></p><p id="detail-explanation" class="detail-explanation"></p>
+    <table class="comparison-table"><caption>Source comparison</caption><thead><tr><th scope="col">Field</th><th scope="col" class="numeric">Internal</th><th scope="col" class="numeric">Processor</th></tr></thead><tbody><tr><th scope="row">Amount <span>(minor units)</span></th><td id="detail-internal-amount" class="numeric"></td><td id="detail-processor-amount" class="numeric"></td></tr><tr><th scope="row">Currency</th><td id="detail-internal-currency" class="numeric"></td><td id="detail-processor-currency" class="numeric"></td></tr><tr><th scope="row">Occurrences</th><td id="detail-internal-occurrences" class="numeric"></td><td id="detail-processor-occurrences" class="numeric"></td></tr></tbody></table>
+    <p class="detail-note">A repeated reference prevents a reliable one-to-one comparison. No amount is selected from duplicate records.</p>
+    <div class="detail-rule"><h3>Matching rule</h3><p>The payment reference must appear exactly once on each side, with the same amount and currency. Duplicate classifications take precedence.</p></div>
+  </dialog>
+</body></html>

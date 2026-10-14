@@ -6,9 +6,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 @Component
 public class SecurityHeaders extends OncePerRequestFilter {
+    private final com.reconcilex.auth.ClerkSettings settings;
+    public SecurityHeaders(com.reconcilex.auth.ClerkSettings settings) { this.settings=settings; }
     @Override protected void doFilterInternal(HttpServletRequest request,HttpServletResponse response,FilterChain chain) throws ServletException,IOException {
         response.setHeader("X-Content-Type-Options","nosniff");
-        response.setHeader("Content-Security-Policy","default-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
+        response.setHeader("Content-Security-Policy",settings.contentSecurityPolicy());
         response.setHeader("Referrer-Policy","no-referrer");
         response.setHeader("Cache-Control","no-store");
         if (isUnsafe(request.getMethod()) && !isSameOriginRequest(request)) {
@@ -22,7 +24,7 @@ public class SecurityHeaders extends OncePerRequestFilter {
     private boolean isUnsafe(String method) {
         return !java.util.Set.of("GET","HEAD","OPTIONS","TRACE").contains(method);
     }
-    private boolean isSameOriginRequest(HttpServletRequest request) {
+    public static boolean isSameOriginRequest(HttpServletRequest request) {
         String fetchSite=request.getHeader("Sec-Fetch-Site");
         if(fetchSite!=null && !fetchSite.equals("same-origin") && !fetchSite.equals("none")) return false;
         String origin=request.getHeader("Origin");

@@ -95,3 +95,15 @@ test('pending upload disables controls and recovers after network failure', asyn
   assert.equal(ui.get('reconcile-button').disabled, false);
   assert.equal(ui.get('feedback').dataset.state, 'error');
 });
+test('unsafe requests attach a session CSRF token and expired sessions are reported', async () => {
+  const ui = setup(); let sent;
+  ui.context.fetch = async (url, options) => {
+    if (url === '/api/auth/csrf') return {ok: true, json: async () => ({headerName:'X-CSRF-TOKEN',token:'masked-token'})};
+    sent = options;
+    return {ok: true, json: async () => ({id:'saved'})};
+  };
+  await ui.call("request('/api/reconciliations', {method:'POST'})");
+  assert.equal(sent.headers['X-CSRF-TOKEN'],'masked-token');
+  ui.context.fetch = async () => ({status:401,ok:false});
+  await assert.rejects(ui.call("request('/api/reconciliations')"), /session expired/);
+});

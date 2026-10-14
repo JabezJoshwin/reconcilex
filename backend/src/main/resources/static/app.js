@@ -69,8 +69,20 @@ function setBusy(value, action = '') {
 
 async function request(url, options) {
   let response;
-  try { response = await fetch(url, options); }
+  try {
+    if (options && !['GET','HEAD','OPTIONS'].includes(options.method || 'GET')) {
+      const tokenResponse = await fetch('/api/auth/csrf');
+      if (!tokenResponse.ok) throw new Error('Cannot obtain request protection');
+      const csrf = await tokenResponse.json();
+      options = {...options, headers: {...options.headers, [csrf.headerName]: csrf.token}};
+    }
+    response = await (typeof window !== 'undefined' && window.ReconcileXAuth ? window.ReconcileXAuth.fetch(url, options) : fetch(url, options));
+  }
   catch { throw new Error('Cannot reach ReconcileX. Check that the application is running, then retry.'); }
+  if (response.status === 401) {
+    if (typeof window !== 'undefined') window.location.assign('/login');
+    throw new Error('Your session expired. Sign in again.');
+  }
   let data;
   try { data = await response.json(); }
   catch { throw new Error(`The server returned an unreadable response (HTTP ${response.status}).`); }
@@ -254,6 +266,7 @@ $('upload-form').addEventListener('submit', async (event) => {
   let savedId = null;
   try {
     const run = await request('/api/reconciliations', {method: 'POST', body: data});
+    if (typeof window !== 'undefined') window.dispatchEvent(new Event('reconciliation-saved'));
     savedId = run.id;
     activeRun = run.id;
     $('run-id').value = run.id;

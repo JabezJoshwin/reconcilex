@@ -27,15 +27,23 @@ docker compose ps
 curl --fail http://localhost:8080/api/health
 ```
 
-Open http://localhost:8080 and select both `sample-data/clean-*.csv` files. The expected result is three matches. Try the two `mixed-*.csv` files to see all nine classifications.
+Configure Clerk authentication using [authentication setup](docs/authentication.md), then
+open http://localhost:8080/signup. After signing in, the private dashboard shows
+your previous runs and the upload workspace. Select both `sample-data/clean-*.csv`
+files for three matches; try the mixed fixtures for all nine classifications.
+Without Clerk configuration, login is unavailable and no reconciliation API is anonymous.
 
-Compose stores data in a PostgreSQL volume and binds the application and database ports to localhost. Stop the demo with `docker compose down`; this preserves the database volume. Do not expose this unauthenticated demo publicly.
+Compose stores data in a PostgreSQL volume and binds the application and database ports to localhost. Stop the demo with `docker compose down`; this preserves the database volume. Public deployment requires the HTTPS, proxy, rate-limit and operational release gates in the authentication guide.
 
 For development, run only PostgreSQL in Compose, then start Spring Boot using the same password:
 
 ```sh
 docker compose up -d db
-export DB_PASSWORD='your_local_password'
+set -a
+. ./.env
+set +a
+export DB_URL="jdbc:postgresql://localhost:${DB_PORT:-5432}/reconcilex"
+export SERVER_PORT="${APP_PORT:-8080}"
 cd backend
 ./mvnw spring-boot:run
 ```
@@ -52,6 +60,14 @@ From `backend/`:
 ```
 
 The default suite uses H2 for API integration tests and does not need Docker. Unit tests cover CSV validation and matching, including duplicates, empty inputs, and deterministic output. API tests cover persistence/retrieval, transaction rollback, upload failures, malformed quoting, and safe CSV export. GitHub Actions runs on Java 21 with a PostgreSQL service and enables the PostgreSQL test; the remote workflow has not been executed in this session.
+
+Authentication tests use real signed Clerk-shaped JWTs to verify signatures and
+claims, CSRF, ownership, expiry/logout, production cookie flags, and rejection of
+legacy Google sessions. Live Clerk signup/login requires your configured instance. Frontend checks:
+
+```sh
+node --test backend/src/test/frontend/*.test.cjs
+```
 
 An opt-in test exercises the full workflow against a running PostgreSQL instance. From the repository root, set the connection variables for your local test database and run:
 
@@ -80,10 +96,16 @@ on Apple M1 / Java 21.0.1; this is a local diagnostic, not a production performa
 
 ## API walkthrough
 
-From the repository root while the app is running:
+From the repository root while the app is running, use a fresh Clerk session token
+in CLERK_SESSION_TOKEN plus CSRF cookies in a local cookies.txt file and a fresh
+CSRF_TOKEN from GET /api/auth/csrf. Tokens expire quickly; prefer the browser UI.
+Treat tokens and cookies as secrets; never commit or share them.
+The browser dashboard handles these automatically. The following CLI examples
+assume you have securely obtained that session; they no longer work anonymously.
 
 ```sh
 curl --fail -i \
+  -b cookies.txt -H "Authorization: Bearer $CLERK_SESSION_TOKEN" -H "X-CSRF-TOKEN: $CSRF_TOKEN" \
   -F internalFile=@sample-data/mixed-internal.csv \
   -F processorFile=@sample-data/mixed-processor.csv \
   http://localhost:8080/api/reconciliations
@@ -92,8 +114,8 @@ curl --fail -i \
 Copy the returned UUID and replace `RUN_ID` in the following commands:
 
 ```sh
-curl --fail 'http://localhost:8080/api/reconciliations/RUN_ID?page=0&size=100'
-curl --fail \
+curl --fail -H "Authorization: Bearer $CLERK_SESSION_TOKEN" 'http://localhost:8080/api/reconciliations/RUN_ID?page=0&size=100'
+curl --fail -H "Authorization: Bearer $CLERK_SESSION_TOKEN" \
   http://localhost:8080/api/reconciliations/RUN_ID/export \
   --output findings.csv
 ```
@@ -127,4 +149,11 @@ The controller handles HTTP, a service coordinates parsing/matching and transact
 
 See [architecture and tradeoffs](docs/architecture.md) and the [60–90 second demo](docs/demo.md).
 
-This is a local portfolio demo without authentication, authorization, tenant isolation, retention automation, or production operational controls. It compares payment references, not bank payout IDs. It does not model fees, settlements, foreign exchange, refunds, or chargebacks. Uploads are synchronous and bounded in memory. A repeated POST creates a new run, so the application does not promise exactly-once submission. The health endpoint indicates application liveness, not database readiness. No production compliance or bank reconciliation claim is made.
+Clerk authentication, CSRF protection, and per-user run isolation are implemented.
+Clerk owns authentication sessions; JDBC sessions retain CSRF state. This remains a portfolio MVP, not a certified
+production financial service: retention automation, distributed rate limiting,
+application data deletion, live-provider HTTPS verification and operational
+deployment controls remain release responsibilities. It compares payment
+references, not bank payout IDs, and does not model fees, settlements, FX, refunds
+or chargebacks. Uploads are synchronous and bounded in memory. Repeated POSTs
+create new runs; no exactly-once or production compliance claim is made.

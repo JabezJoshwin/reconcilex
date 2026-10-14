@@ -23,6 +23,10 @@ services:
       SERVER_ADDRESS: 0.0.0.0
       DB_USER: reconcilex
       DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      CLERK_PUBLISHABLE_KEY: ${CLERK_PUBLISHABLE_KEY:-}
+      CLERK_ISSUER: ${CLERK_ISSUER:-}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8080}
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-}
     depends_on:
       db:
         condition: service_healthy

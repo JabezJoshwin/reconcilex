@@ -1,4 +1,9 @@
 spring:
+  session:
+    store-type: jdbc
+    timeout: 30m
+    jdbc:
+      initialize-schema: never
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/reconcilex}
     username: ${DB_USER:reconcilex}
@@ -11,7 +16,18 @@ spring:
     mapper:
       sort-properties-alphabetically: false
 server:
+  servlet:
+    session:
+      tracking-modes: cookie
+      cookie:
+        http-only: true
+        same-site: lax
   address: ${SERVER_ADDRESS:127.0.0.1}
   error:
     include-message: never
     include-stacktrace: never
+app:
+  base-url: ${APP_BASE_URL:http://localhost:8080}
+  clerk:
+    publishable-key: ${CLERK_PUBLISHABLE_KEY:}
+    issuer: ${CLERK_ISSUER:}

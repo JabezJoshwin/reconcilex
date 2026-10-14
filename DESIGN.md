@@ -90,3 +90,19 @@ grid, desktop pinned-card sequence, decision carousel, and functioning workspace
 Use Phosphor icons. Monospace remains for code and exact source identifiers;
 dashboard status colors supplement explicit labels. Keep reduced-motion support
 and the pause control. No new frameworks, remote assets, or backend behavior.
+
+## Authenticated product extension
+
+Clerk signup/login and the private run dashboard retain the current white/crimson,
+Satoshi, paper-surface and Phosphor language. Public landing motion is unchanged.
+The landing workspace now links to authentication; upload controls and run history
+live in the protected dashboard. Account pages favor accessible, static layouts
+over additional animation. Never render account or transaction text as HTML.
+
+Account forms sit flat on the white canvas, separated from the editorial intro
+by a fine warm-neutral rule. Use Satoshi, crimson primary actions, 2px control
+radii and no raised/nested auth cards. Scope display typography to the intro;
+never apply page heading or paragraph styles to Clerk's nested elements. Use
+Clerk's simple theme, flush elevation and stable public CSS classes. Keep provider
+names legible on narrow screens, all verification/error states visible, and
+Clerk's development-mode notice intact.

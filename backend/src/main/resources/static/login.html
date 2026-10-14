@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in · ReconcileX</title>
+  <meta name="description" content="Sign in to your private ReconcileX workspace to reconcile payment records and reopen saved reports.">
+  <link rel="stylesheet" href="/styles.css">
+  <link rel="stylesheet" href="/theme.css">
+  <link rel="stylesheet" href="/account.css">
+  <script src="/clerk.js" defer></script>
+  <script src="/auth.js" defer></script>
+</head>
+<body class="account-page">
+  <a class="skip-link" href="#clerk-auth">Skip to sign in</a>
+  <header class="account-header">
+    <a class="brand" href="/">Reconcile<span>X</span></a>
+    <a class="auth-back" href="/">Back to the engine <svg class="ph-icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><use href="/assets/phosphor.svg#arrow-up-right"></use></svg></a>
+  </header>
+  <main class="auth-layout">
+    <section class="auth-intro" aria-labelledby="auth-title">
+      <p class="auth-eyebrow">Payment reconciliation. By exact reference.</p>
+      <h1 id="auth-title">Your records.<br>Your workspace.</h1>
+      <p class="auth-description">Sign in to reconcile your payments and pick up where you left off.</p>
+    </section>
+    <section class="auth-panel" aria-labelledby="login-title">
+      <h2 id="login-title" class="sr-only">Sign in to ReconcileX</h2>
+      <div id="clerk-auth" tabindex="-1"></div>
+      <p id="auth-feedback" role="status" aria-live="polite">Preparing your workspace…</p>
+      <p class="auth-note">Your reports stay private to your account.<br>Authentication is managed by Clerk.</p>
+    </section>
+  </main>
+</body>
+</html>

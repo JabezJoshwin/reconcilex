@@ -2,6 +2,7 @@ package com.reconcilex.api;
 
 import com.fasterxml.jackson.databind.*;
 import org.junit.jupiter.api.Test;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,9 +15,19 @@ import static org.assertj.core.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest(properties={"spring.datasource.url=jdbc:h2:mem:reconcilex;MODE=PostgreSQL;DB_CLOSE_DELAY=-1", "spring.datasource.username=sa", "spring.datasource.password="})
+@org.springframework.test.context.ActiveProfiles("test")
+@SpringBootTest(properties={"spring.datasource.url=jdbc:h2:mem:reconcilex;MODE=PostgreSQL;DB_CLOSE_DELAY=-1", "spring.datasource.username=sa", "spring.datasource.password=","app.base-url=http://localhost:8080","spring.security.oauth2.client.registration.google.client-id=unconfigured","spring.security.oauth2.client.registration.google.client-secret=unconfigured"})
+@org.springframework.security.test.context.support.WithMockUser(username="11111111-1111-4111-8111-111111111111")
 @AutoConfigureMockMvc
 class ApiWorkflowTest {
+    @Autowired org.springframework.jdbc.core.JdbcTemplate authJdbc;
+    @org.junit.jupiter.api.BeforeEach void seedIdentity() {
+        if(authJdbc.queryForObject("SELECT COUNT(*) FROM app_users WHERE id=?",Integer.class,java.util.UUID.fromString("11111111-1111-4111-8111-111111111111"))==0)
+            authJdbc.update("INSERT INTO app_users (id,issuer,subject,email,display_name,created_at) VALUES (?,?,?,?,?,CURRENT_TIMESTAMP)",java.util.UUID.fromString("11111111-1111-4111-8111-111111111111"),"https://accounts.google.com","test-owner","owner@example.test","Test owner");
+    }
+    static org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder secureMultipart() {
+        var request=multipart("/api/reconciliations"); request.with(csrf()); return request;
+    }
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper mapper;
     @Autowired JdbcTemplate jdbc;
@@ -25,7 +36,7 @@ class ApiWorkflowTest {
     static final String HEADER="transaction_id,amount_minor,currency\n";
     MockMultipartFile file(String name,String csv) { return new MockMultipartFile(name,"input.csv","text/csv",csv.getBytes(StandardCharsets.UTF_8)); }
     JsonNode upload(String internal,String processor) throws Exception {
-        var response=mvc.perform(multipart("/api/reconciliations").file(file("internalFile",internal)).file(file("processorFile",processor)))
+        var response=mvc.perform(secureMultipart().file(file("internalFile",internal)).file(file("processorFile",processor)))
             .andExpect(status().isCreated()).andExpect(header().exists("Location")).andReturn();
         return mapper.readTree(response.getResponse().getContentAsString());
     }
@@ -55,14 +66,14 @@ class ApiWorkflowTest {
     @Test void invalidInputCreatesNoRunAndParametersAreBounded() throws Exception {
         int before=jdbc.queryForObject("SELECT COUNT(*) FROM reconciliation_runs",Integer.class);
         for(String row:new String[]{"x,0,INR", "x,9223372036854775808,INR", "x,1,INVALID", ",1,INR", "x,1.5,INR"})
-            mvc.perform(multipart("/api/reconciliations").file(file("internalFile",HEADER+row)).file(file("processorFile",HEADER))).andExpect(status().isBadRequest()).andExpect(jsonPath("code").value("INVALID_INPUT"));
-        mvc.perform(multipart("/api/reconciliations").file(new MockMultipartFile("internalFile",new byte[5*1024*1024+1])).file(file("processorFile",HEADER))).andExpect(status().isBadRequest());
-        mvc.perform(multipart("/api/reconciliations").file(file("internalFile",HEADER+"x,1,INR")).file(file("processorFile",HEADER+"x,-1,INR"))).andExpect(status().isBadRequest());
+            mvc.perform(secureMultipart().file(file("internalFile",HEADER+row)).file(file("processorFile",HEADER))).andExpect(status().isBadRequest()).andExpect(jsonPath("code").value("INVALID_INPUT"));
+        mvc.perform(secureMultipart().file(new MockMultipartFile("internalFile",new byte[5*1024*1024+1])).file(file("processorFile",HEADER))).andExpect(status().isBadRequest());
+        mvc.perform(secureMultipart().file(file("internalFile",HEADER+"x,1,INR")).file(file("processorFile",HEADER+"x,-1,INR"))).andExpect(status().isBadRequest());
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM reconciliation_runs",Integer.class)).isEqualTo(before);
         mvc.perform(get("/api/reconciliations/"+UUID.randomUUID())).andExpect(status().isNotFound());
         mvc.perform(get("/api/reconciliations/nope")).andExpect(status().isBadRequest());
         mvc.perform(get("/api/reconciliations/"+UUID.randomUUID()).param("size","501")).andExpect(status().isBadRequest());
-        mvc.perform(multipart("/api/reconciliations")).andExpect(status().isBadRequest());
+        mvc.perform(secureMultipart()).andExpect(status().isBadRequest());
     }
     @Test void headerOnlyAndHealthAndAssets() throws Exception {
         var run=upload(HEADER,HEADER);
@@ -74,8 +85,8 @@ class ApiWorkflowTest {
         for(String id:new String[]{"=1+1","+SUM(1)","-1","@SUM(1)","  =1"}) assertThat(ReconciliationController.safeCell(id)).startsWith("'");
     }
     @Test void frameworkClientErrorsPreserveTheirHttpStatusAndHeaders() throws Exception {
-        mvc.perform(put("/api/reconciliations")).andExpect(status().isMethodNotAllowed()).andExpect(header().string("Allow",org.hamcrest.Matchers.containsString("POST")));
-        mvc.perform(post("/api/reconciliations").contentType("application/json").content("{}"))
+        mvc.perform(put("/api/reconciliations").with(csrf())).andExpect(status().isMethodNotAllowed()).andExpect(header().string("Allow",org.hamcrest.Matchers.containsString("POST")));
+        mvc.perform(post("/api/reconciliations").with(csrf()).contentType("application/json").content("{}"))
             .andExpect(status().isUnsupportedMediaType()).andExpect(jsonPath("code").value("INVALID_REQUEST"));
         mvc.perform(get("/api/not-a-route")).andExpect(status().isNotFound()).andExpect(jsonPath("code").value("NOT_FOUND"));
         mvc.perform(get("/api/health").accept("text/csv")).andExpect(status().isNotAcceptable());
@@ -83,24 +94,24 @@ class ApiWorkflowTest {
     @Test void crossOriginUploadsAreRejectedBeforePersistence() throws Exception {
         int before=jdbc.queryForObject("SELECT COUNT(*) FROM reconciliation_runs",Integer.class);
         for(String origin:new String[]{"http://localhost:19090","https://evil.invalid","null","invalid-origin","http://localhost/path","http://user@localhost","http://localhost?x=1","http://localhost#x"})
-            mvc.perform(multipart("/api/reconciliations").file(file("internalFile",HEADER)).file(file("processorFile",HEADER)).header("Origin",origin))
+            mvc.perform(secureMultipart().file(file("internalFile",HEADER)).file(file("processorFile",HEADER)).header("Origin",origin))
                 .andExpect(status().isForbidden()).andExpect(jsonPath("code").value("CROSS_ORIGIN_REJECTED"));
         for(String fetchSite:new String[]{"cross-site","same-site"})
-            mvc.perform(multipart("/api/reconciliations").file(file("internalFile",HEADER)).file(file("processorFile",HEADER)).header("Sec-Fetch-Site",fetchSite))
+            mvc.perform(secureMultipart().file(file("internalFile",HEADER)).file(file("processorFile",HEADER)).header("Sec-Fetch-Site",fetchSite))
                 .andExpect(status().isForbidden());
         assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM reconciliation_runs",Integer.class)).isEqualTo(before);
     }
     @Test void sameOriginBrowserAndNonBrowserUploadsStillWork() throws Exception {
-        mvc.perform(multipart("/api/reconciliations").file(file("internalFile",HEADER)).file(file("processorFile",HEADER))
+        mvc.perform(secureMultipart().file(file("internalFile",HEADER)).file(file("processorFile",HEADER))
             .header("Origin","http://localhost:18080").header("Sec-Fetch-Site","same-origin")
             .with(request->{request.setServerName("localhost");request.setServerPort(18080);return request;})).andExpect(status().isCreated());
-        mvc.perform(multipart("/api/reconciliations").file(file("internalFile",HEADER)).file(file("processorFile",HEADER)).header("Origin","http://localhost"))
+        mvc.perform(secureMultipart().file(file("internalFile",HEADER)).file(file("processorFile",HEADER)).header("Origin","http://localhost"))
             .andExpect(status().isCreated());
         upload(HEADER,HEADER);
     }
     @Test void malformedQuotingIsRejectedWithoutSilentlyChangingValues() throws Exception {
         for (String row : new String[]{"a\"b,1,INR", "a,1,\"INR\" ", "\"a\" tail,1,INR"})
-            mvc.perform(multipart("/api/reconciliations").file(file("internalFile",HEADER+row)).file(file("processorFile",HEADER)))
+            mvc.perform(secureMultipart().file(file("internalFile",HEADER+row)).file(file("processorFile",HEADER)))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("code").value("INVALID_INPUT"));
         upload(HEADER+"\"a\"\"b\",1,INR",HEADER+"\"a\"\"b\",1,INR");
     }
@@ -113,7 +124,7 @@ class ApiWorkflowTest {
         org.mockito.Mockito.doAnswer(invocation -> {
             invocation.callRealMethod();
             throw new org.springframework.dao.DataIntegrityViolationException("Injected failure after inserts");
-        }).when(store).save(org.mockito.ArgumentMatchers.any(),org.mockito.ArgumentMatchers.anyList(),org.mockito.ArgumentMatchers.anyList(),org.mockito.ArgumentMatchers.anyList());
+        }).when(store).save(org.mockito.ArgumentMatchers.any(),org.mockito.ArgumentMatchers.any(),org.mockito.ArgumentMatchers.anyList(),org.mockito.ArgumentMatchers.anyList(),org.mockito.ArgumentMatchers.anyList());
         byte[] csv=(HEADER+"rollback,1,INR\n").getBytes(StandardCharsets.UTF_8);
         assertThatThrownBy(() -> service.create(new java.io.ByteArrayInputStream(csv),new java.io.ByteArrayInputStream(csv)))
             .isInstanceOf(org.springframework.dao.DataAccessException.class);
