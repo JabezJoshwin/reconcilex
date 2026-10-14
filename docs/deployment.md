@@ -110,7 +110,17 @@ Executed locally on 2026-10-14:
   zero failures, errors or skips; packaged JAR successfully.
 - Frontend and deployment-script verification: 29 Node tests passed.
 - Both GitHub workflows passed actionlint 1.7.12; all deployment YAML parsed.
-- Linux AMD64 Docker build is still being verified; no hosted result is claimed.
+- Linux AMD64 Docker build passed. Its disposable-container smoke check passed
+  with a 512 MiB memory limit, PostgreSQL migrations, readiness, static assets,
+  secure CSRF cookie and anonymous private-route rejection. Docker emulated AMD64
+  on the local ARM64 machine; GitHub also passed on native Linux AMD64.
+- [GitHub verification for 77a26df](https://github.com/JabezJoshwin/reconcilex/actions/runs/38607622531)
+  passed its test and container jobs. Deployment was deliberately skipped because
+  resource provisioning and `DEPLOY_ENABLED` configuration are incomplete.
+
+Actions are pinned to verified official release commits and Ubuntu 24.04. Hosted
+login, account isolation, redeploy persistence, cold start and rollback have not
+been exercised against Render/Neon; local checks do not substitute for them.
 
 Provisioning and hosted acceptance are not yet complete. Update this section only
 with executed checks and the real public URL/deployment/workflow links. Do not
