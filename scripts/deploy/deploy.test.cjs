@@ -24,7 +24,18 @@ test('deployment targets the tested SHA and checks the hosted revision',async()=
   assert.equal(result.status,'passed');
   assert.equal(JSON.parse(f.calls[0].options.body).commitId,sha);
   assert.equal(f.calls[0].options.headers.Authorization,'Bearer fixture-secret');
+  assert.equal(f.calls[1].url,base+'/api/health');
   assert.ok(f.calls.filter(c=>!c.url.startsWith('https://api.render.com')).every(c=>!c.options.headers?.Authorization));
+});
+test('one release wake failure cannot skip deployment or final hosted checks',async()=>{
+  const f=fixture();let wakes=0;
+  const fetcher=async(url,options)=>{
+    if(url===base+'/api/health' && ++wakes===1) throw new Error('Cold-start timeout');
+    return f.fetcher(url,options);
+  };
+  assert.equal((await deploy({key:'secret',service:'srv-fixture',sha,url:base,fetcher})).status,'passed');
+  assert.equal(wakes,2); // One wake, then the mandatory final revision check.
+  assert.ok(f.calls.some(c=>c.url===base+'/api/ready'));
 });
 test('Render HTTP and terminal deployment failures are not mistaken for success',async()=>{
   for(const config of [{apiStatus:401},{status:'build_failed'},{status:'update_failed'},{status:'canceled'}]) {

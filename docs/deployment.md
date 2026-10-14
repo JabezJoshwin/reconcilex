@@ -11,7 +11,7 @@ Free allowances can change. Verify both plans before creating resources. Do not
 add a card or enable automatic paid upgrades. Render's verified workspace was
 Hobby with no card on file. If quotas run out, stop/suspend rather than upgrade.
 Render sleeps after 15 minutes idle and may take about a minute to start again.
-Neon also suspends idle compute. There are no keep-alive pings, paid disks, cron
+Neon also suspends idle compute. There are no recurring keep-alive pings, paid disks, cron
 services or added monitoring subscriptions.
 
 ## Provision and configure
@@ -61,7 +61,8 @@ and a Linux AMD64 Docker build/smoke test. They receive no deployment secrets.
 Main runs those same gates before requesting the exact verified SHA from Render.
 GitHub serializes deployments; in-progress deployments are never cancelled.
 
-The deployment script polls Render for at most 20 minutes, rejects terminal/API
+The deployment script makes one bounded release-scoped wake request, then polls
+Render within a 20-minute deadline, rejects terminal/API
 failures, verifies Render's commit and `/api/health` revision, then checks ready,
 static pages/assets, Clerk resources, secure CSRF cookies, HSTS, login redirects,
 and anonymous rejection of private APIs. Reports/JARs are retained for seven days.
@@ -115,13 +116,44 @@ Executed locally on 2026-10-14:
   secure CSRF cookie and anonymous private-route rejection. Docker emulated AMD64
   on the local ARM64 machine; GitHub also passed on native Linux AMD64.
 - [GitHub verification for 77a26df](https://github.com/JabezJoshwin/reconcilex/actions/runs/38607622531)
-  passed its test and container jobs. Deployment was deliberately skipped because
-  resource provisioning and `DEPLOY_ENABLED` configuration are incomplete.
+  passed its test and container jobs. Deployment was deliberately skipped during
+  bootstrap, before resources and secrets were configured.
 
-Actions are pinned to verified official release commits and Ubuntu 24.04. Hosted
-login, account isolation, redeploy persistence, cold start and rollback have not
-been exercised against Render/Neon; local checks do not substitute for them.
+Actions are pinned to verified official release commits and Ubuntu 24.04.
 
-Provisioning and hosted acceptance are not yet complete. Update this section only
-with executed checks and the real public URL/deployment/workflow links. Do not
-describe the app as deployed merely because deployment configuration exists.
+Hosted provisioning and checks on 2026-10-14:
+
+- Public app: [ReconcileX demo](https://reconcilex-demo.onrender.com).
+- Neon project `frosty-credit-14982760`: Free plan, AWS Singapore, PostgreSQL 17,
+  database `reconcilex`; other services disabled. The endpoint's TLS certificate
+  chain validated. No local data was imported.
+- [Render service](https://dashboard.render.com/web/srv-db7s1c8n74is73dtufog)
+  created from the Blueprint on Free, deployed `da49f87`, and returned HTTP 200
+  with the full expected revision. New database credentials live only in Render.
+- Hosted smoke checks passed: database readiness, public pages/assets, HSTS,
+  secure HttpOnly SameSite CSRF cookie, fixed login redirect, private API rejection,
+  and Clerk resources. The actual Clerk sign-in component rendered in Safari.
+- GitHub's `demo` environment contains the encrypted deployment key and is
+  restricted to `main`; the enabled full CI/CD run is
+  [38610905685](https://github.com/JabezJoshwin/reconcilex/actions/runs/38610905685).
+  Its initial test and container jobs passed, but the deployment call returned HTTP 401:
+  the initial secret contained an abbreviated key-table prefix. A full replacement
+  key was generated and saved after GitHub user account re-verification. Attempt 3
+  authenticated successfully and triggered Render deployment
+  `dep-db7sacm7bikc73cdjlsg`. Render marked the release live after a single public
+  health request woke the idle service. Attempt 3 passed the deployment job and
+  all hosted smoke checks; full CI/CD is confirmed working for `da49f87`.
+- The release-scoped wake-request correction passed 30 frontend/deployment-script
+  tests, including proof that a failed wake cannot bypass the mandatory final
+  hosted checks. Its pushed pipeline result must be checked separately.
+
+Authenticated browser upload/history/export, second-account isolation, redeploy
+persistence and rollback remain unverified. A post-idle health request returned
+HTTP 200 with the expected revision, but authenticated cold-start behavior remains
+unverified. Sign-in is
+user-controlled; a green health check is not evidence for those user stories.
+
+The unused first Render API key `reconcilex-github-demo` should be revoked after
+user confirmation. GitHub uses `reconcilex-github-demo-v2`; neither key is stored
+in this repository. Render keys can manage other account services, so protect the
+GitHub environment and review workflow changes before merging.

@@ -12,6 +12,15 @@ async function deploy({key,service,sha,url,fetcher=fetch,sleep=ms=>new Promise(r
   const started=await request('/services/'+service+'/deploys',{method:'POST',body:JSON.stringify({commitId:sha,clearCache:'do_not_clear'})});
   if(!/^dep-[a-z0-9]+$/.test(started.id || '')) throw new Error('Render did not return a deployment ID');
   const deadline=clock()+20*60*1000;
+  // A sleeping Free service can delay promotion even after the new JVM starts.
+  // One release-scoped request wakes it; this is not recurring keep-alive traffic.
+  try {
+    const wake=await fetcher(url+'/api/health',{redirect:'manual',signal:AbortSignal.timeout(90000)});
+    await wake.body?.cancel();
+    console.log('Release wake request returned HTTP '+wake.status);
+  } catch {
+    console.log('Release wake request unavailable; deployment and final verification remain required');
+  }
   while(clock()<deadline) {
     const state=await request('/services/'+service+'/deploys/'+started.id);
     console.log('Render deployment '+started.id+': '+state.status);

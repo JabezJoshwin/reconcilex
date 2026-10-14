@@ -2,6 +2,9 @@
 
 A payment reconciliation MVP built with Java 21, Spring Boot, Maven, PostgreSQL, Apache Commons CSV, and a browser dashboard served by the same application.
 
+[Open the hosted demo](https://reconcilex-demo.onrender.com) · synthetic data only.
+Free hosting sleeps when idle; the first visit may take a minute or longer.
+
 Upload internal and processor CSVs to compare the exact shared payment reference, inspect disjoint findings, retrieve a persisted run, and export a spreadsheet-safe report. Reconciliation uses positive integer minor units; it never uses floating-point money arithmetic.
 
 ## Run locally
