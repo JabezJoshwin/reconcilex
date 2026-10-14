@@ -16,7 +16,7 @@ being converted to 500. A 406 response can have an empty body.
 `GET /api/health` returns `status` and deployed `revision`. `GET /api/ready` checks
 the database and returns 200 `{status: "UP"}` or generic 503 `{status: "DOWN"}`.
 Both are public and contain no connection details. Auth config additionally
-includes `demo`, enabling the synthetic-data notice only on hosted demos.
+includes `demo`, identifying the hosted demo profile; the UI does not inject a banner.
 The demo profile limits uploads to ten attempts per account per minute and two
 concurrent submissions, returning 429/503 with Retry-After when limited.
 

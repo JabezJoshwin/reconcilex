@@ -7,7 +7,6 @@
  --color-success: #22623f; --color-success-bg: #edf6ef; --color-warning: #86540b; --color-error: #a30f29; --color-error-bg: #fff0f2;
  --radius: 2px; --radius-sm: 2px;
 }
-.demo-notice { padding: 10px 20px; background: var(--color-subtle); color: var(--color-muted); font: 12px/1.6 var(--font-ui); text-align: center; border-bottom: 1px solid var(--color-border); }
 body, main { background: var(--color-bg); color: var(--color-ink); }
 .app-header { position: relative; color: var(--color-accent); background: #fff; }
 .header-inner { display: grid; grid-template-columns: 1fr 1fr; max-width: 1440px; height: auto; padding: 28px 40px 20px; gap: 28px; }

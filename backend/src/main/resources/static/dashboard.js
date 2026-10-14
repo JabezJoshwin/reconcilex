@@ -1,7 +1,7 @@
 'use strict';
 (() => {
   const authFetch = (...args) => window.ReconcileXAuth.fetch(...args);
-  let page = 0, total = 0, loading = false;
+  let page = 0, total = 0, loading = false, exporting = false;
   const byId = id => document.getElementById(id);
   async function history(nextPage = 0) {
     if (loading) return;
@@ -42,15 +42,29 @@
   byId('history-retry').addEventListener('click',() => history(page));
   byId('export-link').addEventListener('click',async event => {
     event.preventDefault();
-    if (!activeRun) return;
+    if (!activeRun || busy || exporting) return;
+    const runId = activeRun;
+    const control = byId('export-link');
+    exporting = true;
+    control.setAttribute('aria-disabled','true');
+    control.textContent = 'Exporting…';
     try {
-      const response = await authFetch('/api/reconciliations/'+encodeURIComponent(activeRun.id)+'/export');
-      if (!response.ok) throw new Error('Could not export the report. Please retry.');
+      const response = await authFetch('/api/reconciliations/'+encodeURIComponent(runId)+'/export');
+      if (response.status === 401) { window.location.assign('/login'); throw new Error('Your session expired. Sign in again.'); }
+      if (!response.ok) {
+        let message;
+        try { message = (await response.json()).message; } catch { /* Non-JSON errors use the status below. */ }
+        throw new Error(message || 'Could not export the report (HTTP '+response.status+'). Please retry.');
+      }
+      if (!/^text\/csv(?:;|$)/i.test(response.headers.get('Content-Type') || '')) throw new Error('The server did not return a CSV report. Please retry.');
       const url = URL.createObjectURL(await response.blob());
-      const link = document.createElement('a'); link.href=url; link.download='reconcilex-'+activeRun.id+'.csv';
-      document.body.append(link); link.click(); link.remove();
-      setTimeout(() => URL.revokeObjectURL(url),1000);
+      const link = document.createElement('a'); link.href=url; link.download='reconcilex-'+runId+'.csv';
+      document.body.append(link);
+      try { link.click(); }
+      finally { link.remove(); setTimeout(() => URL.revokeObjectURL(url),30000); }
+      setFeedback('CSV download started.','success');
     } catch(error) { setFeedback(error.message,'error'); }
+    finally { exporting = false; control.removeAttribute('aria-disabled'); control.textContent = 'Export CSV'; }
   });
   window.addEventListener('reconciliation-saved',() => history(0));
   // Do not restore stale private report DOM from back/forward cache after logout.
