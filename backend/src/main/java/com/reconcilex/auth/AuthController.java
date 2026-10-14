@@ -16,7 +16,7 @@ public class AuthController {
     @GetMapping("/dashboard") String dashboard() { return "forward:/dashboard.html"; }
     @GetMapping("/api/me") @ResponseBody UserIdentity me() { return users.require(CurrentUser.id()); }
     @GetMapping("/api/auth/config") @ResponseBody Map<String,Object> config() {
-        return Map.of("clerkConfigured",settings.configured(),"publishableKey",settings.publishableKey(),"frontendApi",settings.issuer());
+        return Map.of("clerkConfigured",settings.configured(),"publishableKey",settings.publishableKey(),"frontendApi",settings.issuer(),"demo",settings.demo());
     }
     @GetMapping("/api/auth/csrf") @ResponseBody Map<String,String> csrf(HttpServletRequest request) {
         var token=(CsrfToken)request.getAttribute(CsrfToken.class.getName());

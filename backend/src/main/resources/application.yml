@@ -27,6 +27,7 @@ server:
     include-message: never
     include-stacktrace: never
 app:
+  revision: ${RENDER_GIT_COMMIT:local}
   base-url: ${APP_BASE_URL:http://localhost:8080}
   clerk:
     publishable-key: ${CLERK_PUBLISHABLE_KEY:}

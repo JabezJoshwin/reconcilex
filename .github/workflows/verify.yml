@@ -1,10 +1,14 @@
-name: Verify
+name: Verify and Deploy
 on:
   push:
   pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
 jobs:
   test:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:17-alpine
@@ -12,8 +16,7 @@ jobs:
           POSTGRES_DB: reconcilex
           POSTGRES_USER: reconcilex
           POSTGRES_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}-ci-only
-        ports:
-          - 5432:5432
+        ports: ['5432:5432']
         options: >-
           --health-cmd "pg_isready -U reconcilex -d reconcilex"
           --health-interval 5s --health-timeout 5s --health-retries 20
@@ -25,16 +28,67 @@ jobs:
           java-version: '21'
           cache: maven
           cache-dependency-path: backend/pom.xml
-      - name: Run unit, H2 and PostgreSQL integration tests
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify Java, PostgreSQL and benchmark
         working-directory: backend
         env:
           RECONCILEX_POSTGRES_TEST: 'true'
           DB_URL: jdbc:postgresql://localhost:5432/reconcilex
           DB_USER: reconcilex
           DB_PASSWORD: ${{ github.run_id }}-${{ github.run_attempt }}-ci-only
-        run: ./mvnw --batch-mode test
+          CLERK_PUBLISHABLE_KEY: ''
+          CLERK_ISSUER: ''
+        run: ./mvnw --batch-mode -Dreconcilex.benchmark=true verify
+      - name: Verify frontend and deployment scripts
+        run: node --test backend/src/test/frontend/*.test.cjs scripts/deploy/*.test.cjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports
+          path: backend/target/surefire-reports/
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verified-jar
+          path: backend/target/reconcilex-0.1.0.jar
+          retention-days: 7
+  container:
+    needs: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Run frontend contract tests
-        run: node --test backend/src/test/frontend/*.test.cjs
+      - name: Build deployable Linux AMD64 image
+        run: docker build --platform linux/amd64 -t reconcilex:ci backend
+      - name: Smoke-test image on disposable PostgreSQL under a 512 MiB memory limit
+        env:
+          DEPLOY_SHA: ${{ github.sha }}
+        run: sh scripts/deploy/container-smoke.sh
+  deploy:
+    needs: [test, container]
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: demo
+      url: ${{ vars.APP_URL }}
+    concurrency:
+      group: reconcilex-demo
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Deploy the verified commit and verify hosted service
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ vars.RENDER_SERVICE_ID }}
+          APP_URL: ${{ vars.APP_URL }}
+          DEPLOY_SHA: ${{ github.sha }}
+        run: node scripts/deploy/render.cjs

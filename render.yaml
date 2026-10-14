@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: reconcilex-demo
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: main
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    autoDeployTrigger: 'off'
+    healthCheckPath: /api/health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: demo
+      - key: SERVER_ADDRESS
+        value: 0.0.0.0
+      - key: APP_BASE_URL
+        sync: false
+      - key: CLERK_PUBLISHABLE_KEY
+        sync: false
+      - key: CLERK_ISSUER
+        sync: false
+      - key: DB_URL
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false

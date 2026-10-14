@@ -16,8 +16,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 public class SecurityConfiguration {
     @Bean SecurityFilterChain security(HttpSecurity http, ClerkSettings settings, ClerkTokenVerifier verifier, UserStore users) throws Exception {
         http.authorizeHttpRequests(a -> a
-            .requestMatchers("/","/index.html","/login","/signup","/login.html","/api/health","/api/auth/config","/api/auth/csrf",
-                "/assets/**","/vendor/**","/*.css","/presentation.js","/auth.js","/clerk.js","/error").permitAll()
+            .requestMatchers("/","/index.html","/login","/signup","/login.html","/api/health","/api/ready","/api/auth/config","/api/auth/csrf",
+                "/assets/**","/vendor/**","/*.css","/presentation.js","/auth.js","/clerk.js","/deployment.js","/error").permitAll()
             .anyRequest().authenticated())
             // Ignore legacy Google/JDBC authentication; Clerk tokens are verified on every request.
             .securityContext(c -> c.securityContextRepository(new RequestAttributeSecurityContextRepository()))
@@ -25,16 +25,17 @@ public class SecurityConfiguration {
             .csrf(c -> c.csrfTokenRepository(new HttpSessionCsrfTokenRepository()))
             .exceptionHandling(e -> e.authenticationEntryPoint((req,res,error) -> {
                 if(req.getRequestURI().startsWith("/api/")) json(res,401,"UNAUTHENTICATED","Sign in required");
-                else res.sendRedirect("/login");
+                else res.sendRedirect(settings.hosted()?settings.baseUrl()+"/login":"/login");
             }).accessDeniedHandler((req,res,error) -> json(res,403,"FORBIDDEN","Request not permitted; reload and retry")))
             .logout(l -> l.logoutUrl("/logout").invalidateHttpSession(true).clearAuthentication(true)
                 .deleteCookies("SESSION").logoutSuccessHandler((req,res,a) -> res.setStatus(204)))
             .headers(h -> h.contentSecurityPolicy(c -> c.policyDirectives(settings.contentSecurityPolicy()))
+                .httpStrictTransportSecurity(s -> s.requestMatcher(req -> settings.hosted() || req.isSecure()))
                 .referrerPolicy(r -> r.policy(org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER)))
             .addFilterBefore(new OncePerRequestFilter() {
                 @Override protected void doFilterInternal(HttpServletRequest req,HttpServletResponse res,jakarta.servlet.FilterChain chain) throws java.io.IOException,jakarta.servlet.ServletException {
                     if (!java.util.Set.of("GET","HEAD","OPTIONS").contains(req.getMethod())) {
-                        if (!com.reconcilex.api.SecurityHeaders.isSameOriginRequest(req)) {
+                        if (!com.reconcilex.api.SecurityHeaders.isSameOriginRequest(req,settings.hosted()?settings.baseUrl():null)) {
                             json(res,403,"CROSS_ORIGIN_REJECTED","Cross-origin writes are not allowed"); return;
                         }
                     }
@@ -55,7 +56,7 @@ public class SecurityConfiguration {
                         try { jwt=verifier.verify(token); }
                         catch(org.springframework.security.oauth2.jwt.JwtException | IllegalArgumentException invalid) {
                             // Login stays usable with an expired cookie so ClerkJS can refresh it.
-                            if(req.getRequestURI().startsWith("/api/") && !req.getRequestURI().startsWith("/api/auth/") && !req.getRequestURI().equals("/api/health")) {
+                            if(req.getRequestURI().startsWith("/api/") && !req.getRequestURI().startsWith("/api/auth/") && !java.util.Set.of("/api/health","/api/ready").contains(req.getRequestURI())) {
                                 json(res,401,"UNAUTHENTICATED","Invalid or expired session"); return;
                             }
                             jwt=null;
@@ -75,7 +76,8 @@ public class SecurityConfiguration {
                     }
                     chain.doFilter(req,res);
                 }
-            },CsrfFilter.class);
+            },CsrfFilter.class)
+            .addFilterAfter(new DemoUploadFilter(settings.demo()),CsrfFilter.class);
         return http.build();
     }
     static void json(HttpServletResponse res,int status,String code,String message) throws java.io.IOException {

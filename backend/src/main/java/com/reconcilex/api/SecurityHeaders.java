@@ -13,7 +13,7 @@ public class SecurityHeaders extends OncePerRequestFilter {
         response.setHeader("Content-Security-Policy",settings.contentSecurityPolicy());
         response.setHeader("Referrer-Policy","no-referrer");
         response.setHeader("Cache-Control","no-store");
-        if (isUnsafe(request.getMethod()) && !isSameOriginRequest(request)) {
+        if (isUnsafe(request.getMethod()) && !isSameOriginRequest(request,settings.hosted()?settings.baseUrl():null)) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType("application/json");
             response.getWriter().write("{\"code\":\"CROSS_ORIGIN_REJECTED\",\"message\":\"Cross-origin writes are not allowed\"}");
@@ -25,6 +25,9 @@ public class SecurityHeaders extends OncePerRequestFilter {
         return !java.util.Set.of("GET","HEAD","OPTIONS","TRACE").contains(method);
     }
     public static boolean isSameOriginRequest(HttpServletRequest request) {
+        return isSameOriginRequest(request,null);
+    }
+    public static boolean isSameOriginRequest(HttpServletRequest request,String expectedOrigin) {
         String fetchSite=request.getHeader("Sec-Fetch-Site");
         if(fetchSite!=null && !fetchSite.equals("same-origin") && !fetchSite.equals("none")) return false;
         String origin=request.getHeader("Origin");
@@ -34,6 +37,11 @@ public class SecurityHeaders extends OncePerRequestFilter {
             var uri=java.net.URI.create(origin);
             if(uri.getHost()==null || uri.getUserInfo()!=null || uri.getRawQuery()!=null || uri.getRawFragment()!=null || !uri.getRawPath().isEmpty()) return false;
             int port=uri.getPort()==-1 ? ("https".equalsIgnoreCase(uri.getScheme())?443:80) : uri.getPort();
+            if(expectedOrigin!=null) {
+                var expected=java.net.URI.create(expectedOrigin);
+                int expectedPort=expected.getPort()==-1?("https".equals(expected.getScheme())?443:80):expected.getPort();
+                return expected.getScheme().equalsIgnoreCase(uri.getScheme()) && expected.getHost().equalsIgnoreCase(uri.getHost()) && expectedPort==port;
+            }
             return request.getScheme().equalsIgnoreCase(uri.getScheme()) && request.getServerName().equalsIgnoreCase(uri.getHost()) && request.getServerPort()==port;
         } catch(IllegalArgumentException e) { return false; }
     }

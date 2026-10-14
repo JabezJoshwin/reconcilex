@@ -14,7 +14,6 @@ import java.util.*;
 public class ReconciliationController {
     private final ReconciliationService service;
     public ReconciliationController(ReconciliationService service) { this.service=service; }
-    @GetMapping("/health") public Map<String,String> health() { return Map.of("status","UP"); }
     @GetMapping("/reconciliations")
     public RunHistory history(@RequestParam(defaultValue="0") int page,@RequestParam(defaultValue="20") int size) {
         return service.history(page,size);

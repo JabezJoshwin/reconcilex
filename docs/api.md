@@ -13,6 +13,13 @@ being converted to 500. A 406 response can have an empty body.
 
 ## Account and history
 
+`GET /api/health` returns `status` and deployed `revision`. `GET /api/ready` checks
+the database and returns 200 `{status: "UP"}` or generic 503 `{status: "DOWN"}`.
+Both are public and contain no connection details. Auth config additionally
+includes `demo`, enabling the synthetic-data notice only on hosted demos.
+The demo profile limits uploads to ten attempts per account per minute and two
+concurrent submissions, returning 429/503 with Retry-After when limited.
+
 `GET /api/me` returns `id`, `displayName`, and `email` for the signed-in user.
 `GET /api/auth/config` publicly returns `clerkConfigured`, `publishableKey`, and `frontendApi`. No secret key is exposed.
 New Clerk accounts return a fallback displayName and blank email from /api/me; the UI reads profile data from ClerkJS.

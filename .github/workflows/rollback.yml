@@ -1,0 +1,44 @@
+name: Rollback demo
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: Full SHA of a previous successfully deployed commit
+        required: true
+        type: string
+permissions:
+  contents: read
+  actions: read
+jobs:
+  rollback:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: demo
+      url: ${{ vars.APP_URL }}
+    concurrency:
+      group: reconcilex-demo
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Require a previously successful deployed revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TARGET_SHA: ${{ inputs.commit }}
+        run: |
+          node -e 'if(!/^[a-f0-9]{40}$/.test(process.env.TARGET_SHA))process.exit(1)'
+          gh api "repos/$GITHUB_REPOSITORY/actions/workflows/verify.yml/runs?head_sha=$TARGET_SHA&status=success&per_page=100" --jq '.workflow_runs | map(select(.head_branch=="main" and (.event=="push" or .event=="workflow_dispatch"))) | .[].id' |
+            while read -r run; do
+              gh api "repos/$GITHUB_REPOSITORY/actions/runs/$run/jobs?per_page=100" --jq '.jobs[] | select(.name=="deploy" and .conclusion=="success") | .id'
+            done | node -e 'let s="";process.stdin.on("data",d=>s+=d);process.stdin.on("end",()=>{if(!s.trim()){console.error("No successful deployment for this revision");process.exit(1)}})'
+      - name: Redeploy without reversing database migrations
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+          RENDER_SERVICE_ID: ${{ vars.RENDER_SERVICE_ID }}
+          APP_URL: ${{ vars.APP_URL }}
+          DEPLOY_SHA: ${{ inputs.commit }}
+        run: node scripts/deploy/render.cjs

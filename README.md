@@ -52,6 +52,10 @@ The optional configuration variables are `DB_URL` (default `jdbc:postgresql://lo
 
 ## Test and package
 
+Free-tier CI/CD and hosted demo setup: [deployment guide](docs/deployment.md).
+The explicit `demo` profile permits HTTPS hosting with Clerk development keys;
+it does not relax production profile authentication requirements.
+
 From `backend/`:
 
 ```sh

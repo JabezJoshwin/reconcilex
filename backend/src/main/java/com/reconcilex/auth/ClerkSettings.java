@@ -12,14 +12,17 @@ import org.springframework.stereotype.Component;
 @Component
 public class ClerkSettings {
     private final String baseUrl, publishableKey, issuer;
+    private final boolean hosted, demo;
     public ClerkSettings(@Value("${app.base-url}") String baseUrl,
         @Value("${app.clerk.publishable-key:}") String key,
         @Value("${app.clerk.issuer:}") String issuer, Environment env) {
         this.baseUrl=baseUrl; this.publishableKey=key; this.issuer=issuer;
         boolean production=env.matchesProfiles("production");
+        demo=env.matchesProfiles("demo");
+        hosted=production || demo;
         URI base=origin(baseUrl);
-        if ((!production && !List.of("localhost","127.0.0.1").contains(base.getHost())) ||
-            (production && !"https".equals(base.getScheme())))
+        if ((!hosted && !List.of("localhost","127.0.0.1").contains(base.getHost())) ||
+            (hosted && !"https".equals(base.getScheme())))
             throw new IllegalStateException("APP_BASE_URL must be a local origin or a production HTTPS origin");
         if (!key.isBlank() || !issuer.isBlank()) {
             URI api=origin(issuer);
@@ -32,6 +35,7 @@ public class ClerkSettings {
         }
         if (production && (!configured() || !key.startsWith("pk_live_")))
             throw new IllegalStateException("Production requires a live Clerk instance");
+        if (demo && !configured()) throw new IllegalStateException("Demo requires configured Clerk authentication");
     }
     static URI origin(String value) {
         URI uri=URI.create(value);
@@ -44,6 +48,8 @@ public class ClerkSettings {
     public String baseUrl() { return baseUrl; }
     public String publishableKey() { return publishableKey; }
     public String issuer() { return issuer; }
+    public boolean hosted() { return hosted; }
+    public boolean demo() { return demo; }
     public String contentSecurityPolicy() {
         String api=configured()?" "+issuer:"";
         // Clerk UI uses inline styles. Scripts remain restricted to self and the exact instance.
