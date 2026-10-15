@@ -7,6 +7,12 @@ Free hosting sleeps when idle; the first visit may take a minute or longer.
 
 Upload internal and processor CSVs to compare the exact shared payment reference, inspect disjoint findings, retrieve a persisted run, and export a spreadsheet-safe report. Reconciliation uses positive integer minor units; it never uses floating-point money arithmetic.
 
+## Demo video
+
+[![Watch the ReconcileX demo](docs/assets/reconcilex-demo.jpg)](https://github.com/JabezJoshwin/reconcilex/releases/download/demo-video/reconcilex-demo.mp4)
+
+[Watch the full walkthrough (2m 35s)](https://github.com/JabezJoshwin/reconcilex/releases/download/demo-video/reconcilex-demo.mp4): sign in, upload CSVs, inspect and filter findings, export CSV, and reopen saved runs. Personal account details in the Google sign-in screens are hidden.
+
 ## Run locally
 
 Requirements: Docker with Compose. For development and tests, install a JDK 21; the Maven wrapper downloads Maven and dependencies on first use.
