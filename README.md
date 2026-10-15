@@ -9,9 +9,9 @@ Upload internal and processor CSVs to compare the exact shared payment reference
 
 ## Demo video
 
-[![Watch the ReconcileX demo](docs/assets/reconcilex-demo.jpg)](https://github.com/JabezJoshwin/reconcilex/releases/download/demo-video/reconcilex-demo.mp4)
+https://github.com/user-attachments/assets/c5961c92-700e-418c-98fb-2941f1b9d8a8
 
-[Watch the full walkthrough (2m 35s)](https://github.com/JabezJoshwin/reconcilex/releases/download/demo-video/reconcilex-demo.mp4): sign in, upload CSVs, inspect and filter findings, export CSV, and reopen saved runs. Personal account details in the Google sign-in screens are hidden.
+Full walkthrough (2m 35s): sign in, upload CSVs, inspect and filter findings, export CSV, and reopen saved runs. Personal account details in the Google sign-in screens are hidden. [Download MP4](https://github.com/JabezJoshwin/reconcilex/releases/download/demo-video/reconcilex-demo.mp4).
 
 ## Run locally
 
